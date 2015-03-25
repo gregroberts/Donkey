@@ -1,4 +1,4 @@
-from Crawlers.htmlxpath import crawler
+
 from pprint import PrettyPrinter
 from importlib import import_module
 
@@ -44,7 +44,7 @@ class Query(object):
 
 class Scrape:
 	def __init__(self, base, query, crawler_name = 'htmlxpath'):
-		crawler = import_module('Crawlers.%s' %  crawler_name)
+		crawler = import_module('..Crawlers.%s' %  crawler_name)
 		self.crawler = crawler.crawler(base)
 		self.query = query
 
@@ -72,10 +72,8 @@ if __name__ == '__main__':
 			}
 		}
 	}
-#	lxml = crawler('http://lxml.de')
-#	a = Query(lxml, query)
+	from Crawlers.htmlxpath import crawler
+	lxml = crawler('http://lxml.de')
+	a = Query(lxml, query)
 	pp = PrettyPrinter()
-#	pp.pprint(a.resp)
-#SCRAPER TEST
-	gg = Scrape('http://lxml.de',query, 'htmlxpath')
-	pp.pprint(gg.go())
+	pp.pprint(a.resp)
