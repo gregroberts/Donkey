@@ -14,7 +14,6 @@ def resp(data, mimetype):
 	elif mimetype == 'xml':
 		res = dicttoxml(data)
 		mt = 'application/xml'
-
 	return Response(
 		response = res,
 		status = 200,
@@ -23,7 +22,7 @@ def resp(data, mimetype):
 
 
 class V3:
-	def scrape(self, mime = 'json', crawler = 'htmlxpath', base = None, query = None):
+	def scrape(self, mime = 'dict', crawler = 'htmlxpath', base = None, query = None):
 		if base is None:
 			base = request.args['base']
 		if query is None:

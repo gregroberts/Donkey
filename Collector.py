@@ -2,21 +2,17 @@ from api import V3
 from pson import pathquery
 
 
-def getter(**params):
-	'''this guy gets the data'''
+def mysql_collector(params, cursor, schema, table, mapping):
 	scraper = V3
 	method = scraper.__dict__[params.pop('method')]
 	data = method(scraper,**params)
-	return data
 
-
-def putter_mysql(data, cursor, schema, table, mapping):
 	what, where = [], []
 	for i, j in mapping.items():
 		what.append(i)
 		where.append(j)
 
-	sql = '''INSERT INTO %s.%s
+	sql = '''REPLACE INTO %s.%s
 			(%s)
 			VALUES
 			%s
@@ -47,7 +43,8 @@ if __name__ == '__main__':
 			}
 		}
 	}
-	data = getter(**{'method':'scrape','mime':'dict','crawler':'htmlxpath','base':'http://lxml.de','query':query})
 	from dbapi import mdb
-	db = mdb(local = True, db='test_gr')
-	putter_mysql(data, db.c,'test_gr','links',{'list.link':'name','list.link_loc':'loc'})
+	db = mdb(local = True, db = 'test_gr')
+	params ={'method':'scrape','mime':'dict','crawler':'htmlxpath','base':'http://lxml.de','query':query}
+	mysql_collector(params, db.c,'test_gr','links',{'list.link':'name','list.link_loc':'loc'})
+	db.done()
