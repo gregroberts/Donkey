@@ -1,3 +1,4 @@
 #exclude compiled shit
 
 *.pyc
+__pycache__/
