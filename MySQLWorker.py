@@ -47,7 +47,6 @@ class MySQLWorker(Worker):
 			if isinstance(job_class, string_types):
 				job_class = import_attribute(job_class)
 			self.job_class = job_class
-		self.log.warning(vars(donk_conf))
 		self.mysql_conn= madb.connect(host=donk_conf.MySQL_host,
 								user=donk_conf.MySQL_user,
 								passwd=donk_conf.MySQL_passwd,
@@ -60,5 +59,3 @@ class MySQLWorker(Worker):
 		return self.perform_job(*args, **kwargs)
 
 
-if __name__ =='__main__':
-	gg = MySQLWorker()
