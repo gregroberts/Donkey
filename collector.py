@@ -28,10 +28,16 @@ from MySQLdb import escape_string
 def dodate(_in):
 	'''parses a datelike thing into a date string'''
 	dd = parser.parse(_in)
-	return dd
+	ddd = '\' %s\'' % dd
+	return ddd
 
 def do_str(_in):
 	'''deals with stringlike things'''
+	if type(_in) is type(None):
+		_in = 'NULL'
+		return _in
+	if type(_in) is not basestring:
+		_in = '%s' % _in
 	gg = escape_string(_in.decode('ascii',errors='replace'))
 	return ' \' %s \' ' % gg
 
@@ -92,7 +98,7 @@ def grab(data, params, cols):
 
 
 
-def collect(query_args, putter_args,db_conn):
+def collect(query_args, putter_args,db_conn=None):
 	cursor = db_conn.cursor()
 	data = d_q(query_args)
 	base = search(putter_args['base'], data)
@@ -124,22 +130,28 @@ if __name__ == '__main__':
 		'query':{
 			'request':{
 				'grabber':'request',
-				'kwargs':{'url':'http://lxml.de'}
+				'kwargs':{'url':'http://www.amazon.com/product-reviews/1782160000'}
 			},
 			'handle':{
-				'stuff':{
-					'title':'//title//text()',
-					'test1':'//h1//text()'			    	
+				'reviews':{
+					'@base':'//div[@class=\'a-section review\']',
+					'text':'.//a[contains(@class,\'review-title\')]/text()',
+					'date':'.//span[contains(@class,\'review-date\')]/text()',
+					'empty':'.//span[@class=\'nonexistent\']/text()',
+					'num':'.//span[contains(@class,\'alt\')]/text()'
 				}
+				
 			}
 		},
 		'putter':{
 			'table_name':'test',
-			'base':'stuff',
+			'base':'reviews',
 			'mapping':{
-				'testcol1':'title[0]',
-				'testcol2':'test1[0]'
+				'testcol':'num[0]',
+				'testcol1':'empty[0]',
+				'testcol2':'date[0]'
 			}
 		}
 	}
 	collection(qry, db.keyconn)
+	#print d_q(qry['query'])#.encode('utf8',errors='replace')

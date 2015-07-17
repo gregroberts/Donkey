@@ -23,7 +23,10 @@ def execute(obj, query, handler):
 		if '@base' in query.keys():
 			base = query.pop('@base')
 			new_obj = handy(base)
-			result = execute(new_obj, query, handler)
+			if new_obj:
+				result = [execute(i, query, handler) for i in new_obj]
+			else:
+				result = []
 		else:
 			result = {i:execute(obj, j, handler) for i, j in query.items()}
 	else:
