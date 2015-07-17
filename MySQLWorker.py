@@ -1,6 +1,6 @@
 from rq.worker import Worker
-from dbapi import mdb
-
+import MySQLdb as madb
+import config as donk_conf
 #Here we try to implement a custom worker class which adds a persistent database connection acros jobs.
 #this connection is passed to each job in the kwarg db_conn
 
@@ -46,7 +46,10 @@ class MySQLWorker(Worker):
 			if isinstance(job_class, string_types):
 				job_class = import_attribute(job_class)
 			self.job_class = job_class
-		self.mysql_conn = mdb()
+		self.mysql_conn= madb.connect(host=donk_conf.MySQL_host,
+								user=donk_conf.MySQL_user,
+								passwd=donk_conf.MySQL_passwd,
+								port=donk_conf.MySQL_port)
 
 		
 	def execute_job(self, *args, **kwargs):
