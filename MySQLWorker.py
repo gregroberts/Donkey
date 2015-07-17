@@ -55,7 +55,7 @@ class MySQLWorker(Worker):
 		
 	def execute_job(self, *args, **kwargs):
 		"""Execute job in same thread/process, do not fork()"""
-		kwargs['db_conn'] = self.mysql_conn
+		job.kwargs['db_conn'] = self.mysql_conn
 		return self.perform_job(*args, **kwargs)
 
 
