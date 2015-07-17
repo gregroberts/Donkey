@@ -50,7 +50,8 @@ class MySQLWorker(Worker):
 		self.mysql_conn= madb.connect(host=donk_conf.MySQL_host,
 								user=donk_conf.MySQL_user,
 								passwd=donk_conf.MySQL_passwd,
-								port=donk_conf.MySQL_port)
+								port=donk_conf.MySQL_port,
+								db=donk_conf.MySQL_db)
 
 	def perform_job(self, job):
 		"""Performs the actual work of a job.  Will/should only be called
