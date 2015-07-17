@@ -73,7 +73,7 @@ if __name__ == '__main__':
 		'freshness': 1,
 		'grabber':'request',
 		'kwargs':{
-			'url':'http://example.comsdf',
+			'url':'http://example.com',
 			'params':{'thing':1,'other_thing':2}
 		}
 	}
