@@ -1,4 +1,5 @@
-from rq.worker import Worker
+from rq.worker import *
+
 import MySQLdb as madb
 import config as donk_conf
 #Here we try to implement a custom worker class which adds a persistent database connection acros jobs.
