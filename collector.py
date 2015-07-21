@@ -111,7 +111,7 @@ def collect(query_args, putter_args,db_conn=None):
 	elif type(base) is dict:
 		queries.append(grab(base, putter_args, cols))
 	else:
-		raise Exception('Data Structure not recognised!')
+		raise Exception('Data Structure \'%s\' not recognised!' % type(base))
 	for qry in queries:
 		print qry
 		cursor.execute(qry)

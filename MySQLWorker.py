@@ -91,6 +91,7 @@ class MySQLWorker(Worker):
 				started_job_registry.remove(job, pipeline=pipeline)
 				pipeline.execute()
 				self.handle_exception(job, *sys.exc_info())
+				#TODO Add a bit here which informs the server of the failed collection
 				return False
 
 		if rv is None:
