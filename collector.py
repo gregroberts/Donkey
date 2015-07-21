@@ -101,7 +101,10 @@ def grab(data, params, cols):
 def collect(query_args, putter_args,db_conn=None):
 	cursor = db_conn.cursor()
 	data = d_q(query_args)
-	base = search(putter_args['base'], data)
+	if putter_args['base'] != '':
+		base = search(putter_args['base'], data)
+	else:
+		base = data
 	cols = get_coldefs(cursor, putter_args['table_name'])
 	queries = []
 	if type(base) is list:

@@ -23,6 +23,7 @@ def schedule(db_conn,redis_conn, sql_query, archetype, queue_name):
 		for col_n, col_v in row.items():
 			print col_n,col_v
 			job = job.replace('{{%s}}' % col_n, col_v)
+			print eval(job)
 		job = eval(job)
 		q.enqueue(collection, job)
 
