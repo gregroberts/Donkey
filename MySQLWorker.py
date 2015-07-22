@@ -7,7 +7,7 @@ import config as donk_conf
 
 
 class MySQLWorker(Worker):
-	def __init__(self, queues, interval= 2, name=None,
+	def __init__(self, queues, interval= 5, name=None,
 				 default_result_ttl=None, connection=None,
 				 exc_handler=None, default_worker_ttl=None, job_class=None):  # noqa
 		if connection is None:
@@ -62,14 +62,13 @@ class MySQLWorker(Worker):
 		"""
 		#make sure we dont do more than one job per interval
 		sms = ['\\','|','/','-']
-		while time.time() < self.interval + self.last_job:
+		while int(time.time()) < int(self.interval + self.last_job):
 			for i in sms:
 				sys.stdout.write('%s\r' % i)
 		self.prepare_job_execution(job)
 		job.kwargs['db_conn'] = self.mysql_conn
 		with self.connection._pipeline() as pipeline:
 			started_job_registry = StartedJobRegistry(job.origin, self.connection)
-
 			try:
 				with self.death_penalty_class(job.timeout or self.queue_class.DEFAULT_TIMEOUT):
 					rv = job.perform()
@@ -114,5 +113,6 @@ class MySQLWorker(Worker):
 		else:
 			self.log.warning('Result will never expire, clean up result key manually')
 		self.last_job = time.time()
+		print self.last_job
 		return True
 
