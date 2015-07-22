@@ -21,9 +21,7 @@ def schedule(db_conn,redis_conn, sql_query, archetype, queue_name):
 	for row in results:
 		job = copy(archetype)
 		for col_n, col_v in row.items():
-			print col_n,col_v
 			job = job.replace('{{%s}}' % col_n, col_v)
-			print eval(job)
 		job = eval(job)
 		q.enqueue(collection, job)
 
@@ -51,7 +49,7 @@ if __name__ == '__main__':
 		},
 		'putter':{
 			'table_name':'test',
-			'base':'reviews',
+			'base':'',
 			'mapping':{
 				'testcol1':'title[0]',
 				'testcol2':'author[0]'

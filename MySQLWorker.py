@@ -1,5 +1,5 @@
 from rq.worker import *
-
+import time
 import MySQLdb as madb
 import config as donk_conf
 #Here we try to implement a custom worker class which adds a persistent database connection acros jobs.
@@ -7,7 +7,7 @@ import config as donk_conf
 
 
 class MySQLWorker(Worker):
-	def __init__(self, queues, name=None,
+	def __init__(self, queues, interval= 2, name=None,
 				 default_result_ttl=None, connection=None,
 				 exc_handler=None, default_worker_ttl=None, job_class=None):  # noqa
 		if connection is None:
@@ -52,11 +52,17 @@ class MySQLWorker(Worker):
 								passwd=donk_conf.MySQL_passwd,
 								port=donk_conf.MySQL_port,
 								db=donk_conf.MySQL_db)
+		#makes sure we only do a job once interval has expired
+		self.last_job = time.time()
+		self.interval = interval
 
 	def perform_job(self, job):
 		"""Performs the actual work of a job.  Will/should only be called
 		inside the work horse's process.
 		"""
+		#make sure we dont do more than one job per interval
+		while time.time() < self.interval + self.last_job():
+			pass
 		self.prepare_job_execution(job)
 		job.kwargs['db_conn'] = self.mysql_conn
 		with self.connection._pipeline() as pipeline:
@@ -105,6 +111,6 @@ class MySQLWorker(Worker):
 			self.log.info('Result is kept for {0} seconds'.format(result_ttl))
 		else:
 			self.log.warning('Result will never expire, clean up result key manually')
-
+		self.last_job = time.time()
 		return True
 

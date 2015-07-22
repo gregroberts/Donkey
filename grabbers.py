@@ -20,6 +20,7 @@ def request(kwargs):
 	k2 = copy(kwargs)
 	mime = k2.pop('mime','html')
 	req = requests.request(k2.pop('method','get'),k2.pop('url'),**k2)
+	#TODO - Add Exception handler for requests module
 	if mime== 'json':
 		return req.json()
 	elif mime == 'html':
@@ -47,6 +48,7 @@ def twitter(kwargs):
 		'response':resp,
 		'content': content
 	}
+	#TODO add exception handler
 	return res
 
 
