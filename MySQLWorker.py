@@ -59,7 +59,7 @@ class MySQLWorker(Worker):
 		inside the work horse's process.
 		"""
 		#make sure we dont do more than one job per interval
-		pint 'Sleeping for %d seconds' % self.interval
+		print 'Sleeping for %d seconds' % self.interval
 		time.sleep(self.interval)
 		self.prepare_job_execution(job)
 		job.kwargs['db_conn'] = self.mysql_conn
