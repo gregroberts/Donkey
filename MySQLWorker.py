@@ -52,8 +52,6 @@ class MySQLWorker(Worker):
 								passwd=donk_conf.MySQL_passwd,
 								port=donk_conf.MySQL_port,
 								db=donk_conf.MySQL_db)
-		#makes sure we only do a job once interval has expired
-		self.last_job = time.time()
 		self.interval = interval
 
 	def perform_job(self, job):
@@ -61,11 +59,8 @@ class MySQLWorker(Worker):
 		inside the work horse's process.
 		"""
 		#make sure we dont do more than one job per interval
-		sms = ['\\','|','/','-']
-		print int(time.time()) < int(self.interval + self.last_job)
-		while int(time.time()) < int(self.interval + self.last_job):
-			for i in sms:
-				sys.stdout.write('%s\r' % i)
+		pint 'Sleeping for %d seconds' % self.interval
+		time.sleep(self.interval)
 		self.prepare_job_execution(job)
 		job.kwargs['db_conn'] = self.mysql_conn
 		with self.connection._pipeline() as pipeline:
@@ -113,7 +108,5 @@ class MySQLWorker(Worker):
 			self.log.info('Result is kept for {0} seconds'.format(result_ttl))
 		else:
 			self.log.warning('Result will never expire, clean up result key manually')
-		self.last_job = time.time()
-		print self.last_job
 		return True
 
