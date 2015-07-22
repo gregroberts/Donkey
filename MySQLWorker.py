@@ -1,5 +1,5 @@
 from rq.worker import *
-import time
+import time, sys
 import MySQLdb as madb
 import config as donk_conf
 #Here we try to implement a custom worker class which adds a persistent database connection acros jobs.
@@ -61,8 +61,10 @@ class MySQLWorker(Worker):
 		inside the work horse's process.
 		"""
 		#make sure we dont do more than one job per interval
+		sms = ['\\','|','/','-']
 		while time.time() < self.interval + self.last_job():
-			pass
+			for i in sms:
+				sys.stdout.write('%s\r' % i)
 		self.prepare_job_execution(job)
 		job.kwargs['db_conn'] = self.mysql_conn
 		with self.connection._pipeline() as pipeline:
