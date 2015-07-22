@@ -62,7 +62,7 @@ class MySQLWorker(Worker):
 		"""
 		#make sure we dont do more than one job per interval
 		sms = ['\\','|','/','-']
-		while time.time() < self.interval + self.last_job():
+		while time.time() < self.interval + self.last_job:
 			for i in sms:
 				sys.stdout.write('%s\r' % i)
 		self.prepare_job_execution(job)
