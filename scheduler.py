@@ -57,7 +57,7 @@ if __name__ == '__main__':
 		}
 	}
 	
-	queue_name = 'test_queue'
+	queue_name = 'default'
 	schedule(conn,
 		redis_conn,
 		sql_query,

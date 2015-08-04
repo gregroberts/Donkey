@@ -9,5 +9,5 @@ import sys
 #python workit.py 2 my_lovely_horse collect_low collect_high
 with Connection():
 	q = map(Queue, sys.argv[3:]) or [Queue()]
-	w = MySQLWorker(q, interval = sys.argv[1], name = sys.argv[2])
+	w = MySQLWorker(q, interval = int(sys.argv[1]), name = sys.argv[2])
 	w.work()
