@@ -8,58 +8,56 @@ from copy import copy
 from rq import Queue
 from redis import Redis
 from collector import collection
-from config import *
+import MySQLdb as madb
+import config as donk_conf
+import json
 
-def schedule(db_conn,redis_conn, sql_query, archetype, queue_name):
+
+def schedule(db_cursor,redis_conn, _input, archetype, queue_name, job_name, inputsource = 'sql'):
 	'''This guy does what it says on the tin. 
 	creates a list of jobs for rq, and adds them to the specified queue
 	'''
 	q = Queue(queue_name, connection = redis_conn)
-	c = db_conn.cursor(cursorclass = DictCursor)
-	c.execute(sql_query)
-	results = c.fetchall()
-	for row in results:
+	if inputsource == 'sql':
+		db_cursor.execute(_input)
+		results = db_cursor.fetchall()
+	for index, row in enumerate(results):
+		job_name = '%s-%d' % (job_name, index)
 		job = copy(archetype)
 		for col_n, col_v in row.items():
 			job = job.replace('{{%s}}' % col_n, col_v)
-		job = eval(job)
-		q.enqueue(collection, job)
+		print job
+		job = json.loads(job.decode('string-escape'))
+		q.enqueue(collection, job, job_id= job_name)
 
+
+
+def scheduler():
+	mysql_conn= madb.connect(host=donk_conf.MySQL_host,
+					    user=donk_conf.MySQL_user,
+					    passwd=donk_conf.MySQL_passwd,
+					    port=donk_conf.MySQL_port,
+					    db=donk_conf.MySQL_db)
+	redis_conn = Redis(host = donk_conf.REDIS_HOST,
+				 port = donk_conf.REDIS_PORT)
+	cursor = mysql_conn.cursor(cursorclass = DictCursor)
+	cursor.execute('''SELECT * FROM Collections
+				 WHERE DATE_ADD(LastScheduled,INTERVAL Frequency DAY) < curdate()''')
+	jobs = cursor.fetchall()
+	for i in jobs:
+		schedule(cursor,
+			   redis_conn,
+			   i['Input'],
+			   i['Archetype'],
+			   i['QueueName'],
+			   i['CollectorName'],
+			   i['InputSource']
+			)
+		cursor.execute('''UPDATE Collections 
+					SET LastScheduled = curdate() 
+					WHERE CollectorName = \'%s\' ''' % i['CollectorName'])
+	mysql_conn.commit()
 
 
 if __name__ == '__main__':
-	import dbapi
-	db = dbapi.mdb()
-	conn = db.keyconn
-	redis_conn = Redis(host = REDIS_HOST,
-				port = REDIS_PORT)
-	sql_query = '''SELECT isbn_10_digit from oss_books where published_date is not null
-				and isbn_10_digit is not null
-			 limit 10'''
-	qry = {
-		'query':{
-			'request':{
-				'grabber':'request',
-				'kwargs':{'url':'http://www.amazon.com/dp/{{isbn_10_digit}}'}
-			},
-			'handle':{
-				"title":"//title//text()",
-				"author":"//a[contains(@class,'NameID')]//text()"	
-			}
-		},
-		'putter':{
-			'table_name':'test',
-			'base':'',
-			'mapping':{
-				'testcol1':'title[0]',
-				'testcol2':'author[0]'
-			}
-		}
-	}
-	
-	queue_name = 'default'
-	schedule(conn,
-		redis_conn,
-		sql_query,
-		repr(qry),
-		queue_name)
+	scheduler()

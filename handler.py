@@ -15,7 +15,7 @@ def get_handler(name):
 def execute(obj, query, handler):
 	'''executes a query on a thing'''
 	handy = lambda x: handler.query(obj, x)
-	if type(query) is str or type(query) is int:
+	if isinstance(query, basestring) or type(query) is int:
 		result = handy(query)
 	elif type(query) is list:
 		result = map(handy, query)
