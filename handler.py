@@ -3,6 +3,7 @@
 #then gets some more organised data from the result
 
 import handlers
+from copy import copy
 
 def get_handler(name):
 	'''gets the handler you asked for
@@ -15,6 +16,7 @@ def get_handler(name):
 def execute(obj, query, handler):
 	'''executes a query on a thing'''
 	handy = lambda x: handler.query(obj, x)
+	query = copy(query)
 	if isinstance(query, basestring) or type(query) is int:
 		result = handy(query)
 	elif type(query) is list:
@@ -27,6 +29,8 @@ def execute(obj, query, handler):
 				result = [execute(i, query, handler) for i in new_obj]
 			else:
 				result = []
+		elif query == {}:
+			return obj
 		else:
 			result = {i:execute(obj, j, handler) for i, j in query.items()}
 	else:

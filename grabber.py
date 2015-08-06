@@ -33,12 +33,14 @@ def mk_key(key):
 
 def cache_insert(s_key,val):
 	'''puts the thing in the cache'''
+	name = 'cache:%s' % s_key
 	c_val = comp(val)
 	mapping = {
 		'ts':time(),
 		'val':c_val
 	}
-	rd_conn.hmset('cache:%s' % s_key, mapping)
+	rd_conn.hmset(name, mapping)
+	rd_conn.expire(name, 864000)
 
 def check_cache(key, freshness = 30):
 	'''takes a request for data, serialises it,
@@ -57,7 +59,7 @@ def check_cache(key, freshness = 30):
 	return ret
 
 def execute(key):
-	which = key['grabber']
+	which = key.get('grabber','request')
 	kwargs = key.get('kwargs', {})
 	how = grabbers.__dict__[which]
 	val = how(kwargs)

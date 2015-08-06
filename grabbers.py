@@ -5,6 +5,8 @@ import config
 from urllib import urlencode
 import oauth2 as oauth
 import json
+from urlparse import urlparse, urljoin
+
 
 @retry(requests.exceptions.RequestException,
 		tries = 5, 
@@ -15,11 +17,20 @@ def request(kwargs):
 		-mime
 		-method
 		-url
-	'''
+	'''	
 	#have to make a copy because kwargs persists
 	k2 = copy(kwargs)
 	mime = k2.pop('mime','html')
-	req = requests.request(k2.pop('method','get'),k2.pop('url'),**k2)
+	url = k2.pop('url')	
+	domain = k2.pop('domain',None)
+	if type(url) == list:
+		try:
+			url =url[0]
+		except:
+			raise Exception('Requests error, you gave me an empty list!?')	
+	if domain is not None:
+		url = urljoin(domain, url)
+	req = requests.request(k2.pop('method','get'),url,**k2)
 	#TODO - Add Exception handler for requests module
 	if mime== 'json':
 		return req.json()
