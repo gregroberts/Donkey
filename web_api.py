@@ -1,4 +1,4 @@
-from flask import Flask, request, Response, abort
+from flask import Flask, request, Response, abort, render_template
 from flask.ext.classy import FlaskView, route
 import config as donk_conf
 from redis import Redis
@@ -40,7 +40,7 @@ class V3View(FlaskView):
 				port = donk_conf.REDIS_PORT)
 
 	def index(self):
-		return 'yo, it works!<br> I should probably replace this with a help section'
+		return render_template('api_docs.html')
 
 	def get_query(self, name):
 		'''searches for the query matching name,
@@ -162,7 +162,7 @@ class V3View(FlaskView):
 		(accepts GET)'''
 		if request.method != 'GET':
 			abort(405)
-		keys = filter(lambda x: val in x, self.rd_conn.keys('library:*'))
+		keys = filter(lambda x: val in x.replace('library:',''), self.rd_conn.keys('library:*'))
 		results = []
 		for i in keys:
 			query = self.rd_conn.hmget(i, ['params','description','saved','query'])
@@ -182,6 +182,34 @@ class V3View(FlaskView):
 			'query':val,
 			'n_results':len(results),
 			'results':results
+		}
+		success = True
+		return response(success, res)
+
+	def list(self):
+		'''Lists all the queries in the library
+		(accepts GET)'''
+		if request.method != 'GET':
+			abort(405)
+		keys = self.rd_conn.keys('library:*')
+		results = []
+		for i in keys:
+			query = self.rd_conn.hmget(i, ['params','description','saved','query'])
+			params = eval(query[0])
+			description = query[1]
+			date_saved = str(datetime.fromtimestamp(float(query[2])))
+			qry =  comp(query[3], un = True)
+			res = {
+				'name': i.replace('library:',''),
+				'description': description,
+				'required parameters': params,
+				'query':  qry,
+				'saved at': date_saved
+			}
+			results.append(res)
+		res = {
+			'queries':results,
+			'number of queries':len(results)
 		}
 		success = True
 		return response(success, res)

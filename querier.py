@@ -107,16 +107,16 @@ if __name__ == '__main__':
 	}
 	pprint(query(test1))
 
-#	test2 = {
-#		'request':{
-#			'kwargs':{
-#				'url':'http://example.com'
-#			}
-#		},
-#		'handle':{
-#			'title':'//title//text()'
-#		}
-#	}
+	test2 = {
+		'request':{
+			'kwargs':{
+				'url':'http://example.com'
+			}
+		},
+		'handle':{
+			'title':'//title//text()'
+		}
+	}
 #	print query(test2)
 #	test3 = {
 #		'request':{
