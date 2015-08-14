@@ -1,0 +1,77 @@
+<html>
+<head>
+<title>
+Donkey Grabber Documentation
+</title>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+<h1>Donkey Grabber Documentation</h1>
+The most important function of Donkey is to abstract away complicated and disparate authentication and data flows, allowing you to make one request, and get the result you need in a nice, normalised format.
+<p>
+	Different data workflows are encapsulated by different 'grabbers'. Each one has a certain use case, and has certain arguments it needs. This page describes the various grabbers
+</p>
+<h2>request</h2>
+This is the <b>default</b> grabber, so if you omit the keyword grabber in your request, this is the one which will be used.
+<h4>Required parameters</h4>
+<ul><li>url - The url you want to access, with scheme included. For example: "http://example.com"</li>
+</ul>
+<h4>Optional Parameters</h4>
+<ul><li>mime - if you want to specify whether you return html or json (more mimes supported in future, maybe) <i>Defaults to html</i></li>
+<li>domain - usefel if your request includes a crawl, and some of the links you are following are relative, including this parameter with the root domain you are accessing will make sure relative hyperlinks are followed correctly</li>
+<li>method - perhaps you want to do a POST request and get some json data back. Go ahead! See what I care! - <i>defaults to GET</i></li>
+</ul>
+<h4>Other parameters</h4>
+This grabber simply wraps the request function from the marvellous <a href="http://docs.python-requests.org">Requests</a> library for python. Kwargs may therefore include any parameters found on <a href="http://docs.python-requests.org/en/latest/api/#main-interface">this</a> page.
+<h4>Notes</h4>
+If you are crawling and want to pass the result of an xpath query to requests, this will be an array, and this grabber will just pop the first element of that array. 
+
+<h2>twitter</h2>
+This wraps the twitter REST API.
+<h4>Required Parameters</h4>
+<ul>
+	<li>route - This is the route wihin the twitter api which you want to query. Should not include a leading slash. For example: "search/tweets.json" for the <a href="https://dev.twitter.com/rest/public/search">Search</a> endpoint</li>
+</ul>
+Depending on what route you are accessing, there may be other parameters required.
+<h4>Optional Parameters</h4>
+These will depend on the route you are accessing
+<p>
+	This is a pretty simple wrapper, doesn't have any defaults, and you shoud be able to figure out how to make your requests by refering to the <a href="https://dev.twitter.com/rest/public">Twitter API docs</a>
+</p>
+<h2>stackexchange</h2>
+This is another simple wrapper around the StackExchange API. Operates very similarly to the twitter grabber.
+<h4>Required Parameters</h4>
+<ul>
+	<li>route - This is the route wihin the stackexchange api which you want to query. Should not include a leading slash. For example: "tags/python/related" for the <a href="http://api.stackexchange.com/docs/related-tags">related tags</a> endpoint</li>
+</ul>
+<h4>Optional Parameters</h4>
+These will depend on the route you are accessing
+The default arguments for this grabber are:
+<pre>
+{
+	"site": "stackoverflow",
+	"pagesize":100,
+	"page":1,
+}
+</pre>
+Because StackOverflow is where all the action goes on!
+<p>
+	This is a pretty simple wrapper, and you shoud be able to figure out how to make your requests by refering to the <a href="http://api.stackexchange.com/docs">StackExchange API docs</a>
+</p>
+
+<h2>google_analytics</h2>
+This grabber wraps the Google Analytics Core Reporting API. Google services have VERY comprehensive documentation.
+<h4>Parameters</h4>
+<p>The full list of parameters accepted by this wrapper can be found on <a href="https://developers.google.com/analytics/devguides/reporting/core/v3/reference?hl=en#Query%20Parameters%20Summary">this page</a> in the table halfway down.</p>
+<p>The ones listed as required are required by this grabber, with the exception of ids. This parameter has been hard coded into the grabber.</p>
+<br>
+<b>Note</b> In the parameter names, whenever you see a dash '-' replace it with an underscore '_'.
+<br>
+Most of the "fun" of using the GA API is in making combinations of metrics and dimensions. These are listed exhaustively on <a href="https://developers.google.com/analytics/devguides/reporting/core/dimsmets">this page</a>, and valid combinations thereof can be checked.
+
+
+
+</div>
+</body>
+</html>

@@ -1,0 +1,26 @@
+<html>
+<head>
+<title>
+Donkey Handler Documentation
+</title>
+<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+<h1>Donkey Handler Documentation</h1>
+We want more than to just grab resources from the internet; we want specific BITS. Different resources need to be handled differently.
+As such, Donkey has different 'handlers' to deal with different resources. 
+
+<h2>XPATH</h2>
+<p>The most commonly used, as most of the resources we will want are HTML/XML documents. wraps Python's <a href="http://lxml.de">LXML</a> package.</p>
+<p>
+	Specifically, this handler takes a document and turns it into lxml's etree object, then executes queries against it using the <a href="http://lxml.de/xpathxslt.html">etree.xpath method</a>
+</p>
+<hr>
+<h2>JMESPATH</h2>
+For when you are working with JSON responses, and want to get a subsection from them, or want to construct crawl rules from them.<a href="http://jmespath.org/">JMESPath</a> is a lush query language for JSON, and as fully featured as anyone could really ask for. It's astonishingly versatile, and you should consult the <a href="http://jmespath.org/specification.html">specification</a> for instructions on how to use it.<br>
+The JMESPath handler merely wraps the search function of the JMESPath python package.
+
+</div>
+</body>
+</html>

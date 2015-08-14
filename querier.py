@@ -80,9 +80,7 @@ if __name__ == '__main__':
 		'grabber':'twitter',
 		'kwargs':{
 			'route':'search/tweets.json',
-			'params':{
-				'q':'greg'
-				}
+			'q':'greg'
 			}
 		},
 	'handle':{

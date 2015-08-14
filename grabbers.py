@@ -6,6 +6,14 @@ from urllib import urlencode
 import oauth2 as oauth
 import json
 from urlparse import urlparse, urljoin
+import apiclient
+from httplib2 import Http
+from urlparse import parse_qs
+
+
+#FIX THIS AT SOME POINT, JEEZ
+requests.packages.urllib3.disable_warnings()
+
 
 
 @retry(requests.exceptions.RequestException,
@@ -38,12 +46,13 @@ def request(kwargs):
 		return req.text
 
 
+
 def twitter(kwargs):
 	'''kwargs must include:
 		-route. e.g. 
 			for https://api.twitter.com/1.1/search/tweets.json?q=%40twitterapi
 			route would be search/tweets.json
-		-params e.g 
+		-all the other params are passed into the query string of the request
 			for https://api.twitter.com/1.1/search/tweets.json?q=%40twitterapi
 			paramters would be {'q':'@twitterapi'}
 	'''
@@ -51,8 +60,12 @@ def twitter(kwargs):
 	consumer = oauth.Consumer(key = atts['consumer_key'], secret = atts['consumer_secret'])
 	token = oauth.Token(key=atts['access_token'], secret = atts['access_token_secret'])
 	client = oauth.Client(consumer, token)
-	params = urlencode(kwargs['params'])
-	url = 'https://api.twitter.com/1.1/%s?%s' % (kwargs['route'] , params)
+	try:
+		route = kwargs.pop('route')
+	except:
+		raise Exception('twitter grabber expects \'route\' parameter ')
+	params = urlencode(kwargs)
+	url = 'https://api.twitter.com/1.1/%s?%s' % (route , params)
 	resp, content = client.request(url, "GET")
 	content = json.loads(content)
 	res = {
@@ -64,6 +77,62 @@ def twitter(kwargs):
 
 
 
+def stackexchange(kwargs):
+	'''For accessing the stackexchange API
+	kwargs must include route, other kwargs will be put into qs
+	'''
+	try:
+		route = kwargs.pop('route')
+	except:
+		raise Exception('Grabber Error, You need to provide a \'route\' kwarg')
+	qs = {
+		'site': 'stackoverflow',
+		'pagesize':100,
+		'page':1,
+	}
+	qs.update(kwargs)
+	qs.update(config.stackexchange)
+	args = urlencode(qs)
+	url = 'https://api.stackexchange.com/2.2/%s?%s' % (route,args)
+	res = requests.get(url)
+	return res.json()
+
+
+
+def google_analytics(kwargs):
+	'''kwargs must include all the things the API docs ask for, with the same names:
+		https://developers.google.com/analytics/devguides/reporting/core/v3/coreDevguide'''
+	#set up service
+	atts = config.google_analytics
+	viewid = atts['viewid']
+	signed = apiclient.oauth2client.client.SignedJwtAssertionCredentials
+	try:
+		with open(atts['pkeyloc'], 'rb') as f:
+			private_key = f.read()
+	except:
+		raise Exception('Grabber Error. coudld not find private key file. Check yer config')
+	credentials = signed(atts['email'],private_key, 'https://www.googleapis.com/auth/analytics')
+	http_auth =credentials.authorize(Http())
+	service = apiclient.discovery.build('analytics','v3',http = http_auth)
+	res = service.data().ga()
+	#construct request
+	kwargs['ids'] = viewid
+	#params = {str(i).replace('-','_'):str(j[0]).replace('{SC}',';') for i,j in params.items() if j != ''}
+	query = res.get(**kwargs).execute()
+	heads = [i['name'] for i in query['columnHeaders']]
+	response = {
+		'query':query['query'],
+		'columns': query['columnHeaders'],
+		'totalResults':query['totalResults'],
+		'isSampled': query['containsSampledData'],
+		'data':[{heads[i]:datum for i, datum in enumerate(row)} for row in query.get('rows',[])],
+	}
+	return response
+
+
+
+
+
 if __name__ == '__main__':
 	print twitter({'route':'search/tweets.json',
-			'params':{'q':'greg'}})
+			'q':'greg'})

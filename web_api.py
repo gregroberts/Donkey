@@ -42,6 +42,9 @@ class V3View(FlaskView):
 	def index(self):
 		return render_template('api_docs.html')
 
+	def docs(self, route ):
+		return render_template('%s_docs.html' % route)
+
 	def get_query(self, name):
 		'''searches for the query matching name,
 		returns the hydrated query 
