@@ -13,6 +13,13 @@ import config as donk_conf
 import json
 
 
+def finish(job_name, db_conn = None):
+	'''called once a collection has finished'''
+	db_cursor = db_conn.cursor()
+	db_cursor.execute('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % job_name)
+	db_conn.commit()
+
+
 def schedule(db_cursor,redis_conn, _input, archetype, queue_name, job_name, inputsource = 'sql'):
 	'''This guy does what it says on the tin. 
 	creates a list of jobs for rq, and adds them to the specified queue
@@ -29,10 +36,11 @@ def schedule(db_cursor,redis_conn, _input, archetype, queue_name, job_name, inpu
 		print job
 		job = json.loads(job.decode('string-escape'))
 		q.enqueue(collection, job, job_id= job_name)
-
-
+	#finally, add a job which finishes the collection
+	q.enqueue(finish, )
 
 def scheduler():
+	'''schedules all the colelctions which need doing'''
 	mysql_conn= madb.connect(host=donk_conf.MySQL_host,
 					    user=donk_conf.MySQL_user,
 					    passwd=donk_conf.MySQL_passwd,
@@ -42,7 +50,9 @@ def scheduler():
 				 port = donk_conf.REDIS_PORT)
 	cursor = mysql_conn.cursor(cursorclass = DictCursor)
 	cursor.execute('''SELECT * FROM Collections
-				 WHERE DATE_ADD(LastScheduled,INTERVAL Frequency DAY) < curdate()''')
+				 WHERE DATE_ADD(LastScheduled,INTERVAL Frequency DAY) < curdate()
+				 and InProgress = 0
+				 ''')
 	jobs = cursor.fetchall()
 	for i in jobs:
 		schedule(cursor,

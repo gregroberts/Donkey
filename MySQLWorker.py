@@ -13,7 +13,6 @@ class MySQLWorker(Worker):
 		if connection is None:
 			connection = get_current_connection()
 		self.connection = connection
-
 		queues = [self.queue_class(name=q) if isinstance(q, text_type) else q
 				  for q in ensure_list(queues)]
 		self._name = name
@@ -62,6 +61,7 @@ class MySQLWorker(Worker):
 		print 'Sleeping for %d seconds' % self.interval
 		time.sleep(self.interval)
 		self.prepare_job_execution(job)
+		#this is the key thing, prodvides a db_conn for functions to use
 		job.kwargs['db_conn'] = self.mysql_conn
 		with self.connection._pipeline() as pipeline:
 			started_job_registry = StartedJobRegistry(job.origin, self.connection)

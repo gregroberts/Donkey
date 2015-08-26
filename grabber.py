@@ -30,7 +30,6 @@ def mk_key(key):
 	key = dumps(key).replace(':','') 
 	return key
 
-
 def cache_insert(s_key,val):
 	'''puts the thing in the cache'''
 	name = 'cache:%s' % s_key
@@ -41,6 +40,14 @@ def cache_insert(s_key,val):
 	}
 	rd_conn.hmset(name, mapping)
 	rd_conn.expire(name, 864000)
+
+def execute(key):
+	'''executes the request'''
+	which = key.pop('@grabber','request')
+	kwargs = key
+	how = grabbers.__dict__[which]
+	val = how(kwargs)
+	return val
 
 def check_cache(key, freshness = 30):
 	'''takes a request for data, serialises it,
@@ -58,25 +65,17 @@ def check_cache(key, freshness = 30):
 		ret = comp(val['val'],True)
 	return ret
 
-def execute(key):
-	which = key.get('grabber','request')
-	kwargs = key.get('kwargs', {})
-	how = grabbers.__dict__[which]
-	val = how(kwargs)
-	return val
-
 def request(req):
-	freshness = req.pop('freshness', 30)
+	freshness = req.pop('@freshness', 30)
 	resp = check_cache(req,freshness)
 	return resp
 
+
 if __name__ == '__main__':
 	qry = {
-		'freshness': 1,
-		'grabber':'request',
-		'kwargs':{
-			'url':'http://example.com',
-			'params':{'thing':1,'other_thing':2}
-		}
+		'@freshness': 1,
+		'@grabber':'request',
+		'url':'http://example.com',
+		'params':{'thing':1,'other_thing':2}
 	}
 	print request(qry)

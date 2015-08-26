@@ -23,6 +23,7 @@ from jmespath import search
 from re import findall
 from dateutil import parser
 from MySQLdb import escape_string
+from config import collector_schemaname
 
 
 def dodate(_in):
@@ -73,7 +74,7 @@ t_maps = {
 
 def get_coldefs(cursor, tbl_name):
 	'''gets the type of each column'''
-	cursor.execute('SHOW COLUMNS from %s' % tbl_name)
+	cursor.execute('SHOW COLUMNS from %s.%s' % (collector_schemaname, tbl_name))
 	names = map(lambda x: (x[0],x[1]),cursor.fetchall())
 	n_d = {}
 	for i in names:
@@ -86,7 +87,7 @@ def get_coldefs(cursor, tbl_name):
 def grab(data, params, cols):
 	'''constructs a single SQL query from a single object'''
 	k_v = list(params['mapping'].items())
-	qry = ' %s INTO %s \n' % (params.get('action','REPLACE'), params['table_name'])
+	qry = ' %s INTO %s.%s \n' % (params.get('action','REPLACE'), collector_schemaname, params['table_name'])
 	qry += '(%s) VALUES \n' % ','.join(map(lambda x: x[0], k_v))
 	vals = []
 	for col_name, col_loc in k_v:
@@ -132,8 +133,8 @@ if __name__ == '__main__':
 	qry = {
 		'query':{
 			'request':{
-				'grabber':'request',
-				'kwargs':{'url':'http://www.amazon.com/product-reviews/1782160000'}
+				'@grabber':'request',
+				'url':'http://www.amazon.com/product-reviews/1782160000'
 			},
 			'handle':{
 				'reviews':{
@@ -157,4 +158,4 @@ if __name__ == '__main__':
 		}
 	}
 	collection(qry, db.keyconn)
-	#print d_q(qry['query'])#.encode('utf8',errors='replace')
+	print d_q(qry['query'])#.encode('utf8',errors='replace')

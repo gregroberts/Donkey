@@ -33,24 +33,24 @@ Donkey Query Documentation
 <h2>Request</h2>
 <p>This is the most important part of the query. It determines what data you want, and how Donkey should get it.</p>
 <p>a request is fulfilled by a 'grabber', which is a function which takes a number of keyword arguments and returns data based on that. Documentation the various grabbers is available <a href="/v3/grabber_docs">here</a></p>
-<p>Fundamentally, it has the following structure:</p>
+<p>It has the following structure:</p>
 <pre>
 {
-	"grabber": "...",
-	"kwargs": {...},
-	"freshness": ...
+	"@grabber": "...",
+	"@freshness": ...,
+	&lt;other arguments&gt;
 }
 </pre>
 <p>
-	The "grabber" key should contain a string corresponding to a grabber. If the specified grabber is not found, your request will fail. 
-	If you omit the grabber key, the default grabber will be used. This is the request grabber, which executes a basic HTTP GET request.
+	The "@grabber" key should contain a string corresponding to a grabber. If the specified grabber is not found, your request will fail. 
+	If you omit the grabber key, the default grabber will be used. This is the request grabber, which executes a basic HTTP request.
 </p>	
 <p>
-	The "kwargs" key contains all the values to be passed to the grabber as keyword arguments. These vary by grabber. Most grabbers will have some required and some optional kwargs. Again, refer to the  <a href="/v3/docs/grabber">grabber documentation</a> for these.
+	The "@freshness" key contains an integer. This determines how 'fresh' in days, you need the data to be. For example, if you put "freshness": 5, then Donkey will check its internal cache, and if this same request has been made in the last 5 days, it will return that cached result, otherwise, it will fetch the data fresh.
+	If you omit the freshness key, the default value of 30 will be used. If you put "freshness":0, the data will always be requested afresh (this is not usually neccesary)
 </p>
 <p>
-	The "freshness" key contains an integer. This determines how 'fresh' in days, you need the data to be. For example, if you put "freshness": 5, then Donkey will check its internal cache, and if this same request has been made in the last 5 days, it will return that cached result, otherwise, it will fetch the data fresh.
-	If you omit the freshness key, the default value of 30 will be used. If you put "freshness":0, the data will always be requested afresh (this is not usually neccesary)
+	All of the other arguments here will be passed to the specific grabber, and form the request. For example, you may want to include some headers with your HTTP request.
 </p>
 <p>
 	Below is an example of a simple Donkey request which only contains the request section:
@@ -58,19 +58,17 @@ Donkey Query Documentation
 <pre>
 {
 	"request":{
-		"grabber":"stackexchange",
-		"kwargs":{
-			"route":"tags",
-			"pagesize":100,
-			"page":1,
-			"min":100,
-		},
-		"freshness": 1
+		"@grabber":"stackexchange",
+		"@freshness": 1
+		"route":"tags",
+		"pagesize":100,
+		"page":1,
+		"min":100,	
 	}
 }
 </pre>
 <p>
-	Here, the grabber is the stackexchange grabber, which wraps the stackexchange.com API. The route kwarg tells Donkey what API route to request, and the rest are inserted as parameters to the request. Authentication and caching are all taken care of!
+	Here, the grabber is the stackexchange grabber, which wraps the stackexchange.com API. The 'route' argument tells Donkey what API route to request, and the rest are inserted as parameters to the request. Authentication and caching are all taken care of!
 </p>
 
 <h2>Handle (Optional)</h2>
@@ -94,9 +92,7 @@ Where the @handler key tells Donkey which handler to use. The rest of the keys w
 <pre>
 {
 	"request":{
-		"kwargs":{
-			"url":"http://example.com"
-		}
+		"url":"http://example.com"
 	},
 	"handle":{
 		"@handler":"XPATH",
@@ -120,9 +116,7 @@ If you want a more complex structure returned, you can nest keys within other JS
 <pre>
 {
 	"request":{
-		"kwargs":{
-			"url":"http://example.com"
-		}
+		"url":"http://example.com"
 	},
 	"handle":{
 		"headers":{

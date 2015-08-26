@@ -77,19 +77,17 @@ So you're writing a new query, and you want to use the web API to see if it is r
 <p>Using whatever is your favoured method for making POST requests, POST the query as a json object (remembering to pass a Content-Type header where neccesary!) to this route, and you'll get a response</p>
 <b>Example Using cURL:</b>
 <pre>
-	$ curl -H "Content-Type: application/json" -X POST -d '{"request":{"kwargs":{"url":"http://example.com"}},"handle":{"title":"//title//text()"}}' http://&lt;donkey url&gt;/v3/test_query/
+	$ curl -H "Content-Type: application/json" -X POST -d '{"request":{"url":"http://example.com"},"handle":{"title":"//title//text()"}}' http://&lt;donkey url&gt;/v3/test_query/
 </pre>
 <b>Example Using python requests</b>
 <pre>	
 >>> import requests
 ...  query = {
 ...     'request':{
-...     'kwargs':{
 ...         'url':'http://example.com'
-... 	}
 ...     },
 ...     'handle':{
-... 	'title':'//title//text()'
+... 		'title':'//title//text()'
 ...     }
 ...  }
 ... 
@@ -97,8 +95,10 @@ So you're writing a new query, and you want to use the web API to see if it is r
 ...                     json =query)
 ...  req.json()
 166: {u'response': {u'query': {u'handle': {u'title': u'//title//text()'},
-                          u'request': {u'kwargs': {u'url': u'http://example.com'}}},
-               u'response': {u'title': [u'Example Domain']}},
+                          u'request': {u'url': u'http://example.com'}
+                         },
+               u'response': {u'title': [u'Example Domain']}
+               	},
        u'success': True}
 </pre>
 

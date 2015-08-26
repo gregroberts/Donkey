@@ -19,9 +19,7 @@ Donkey SubQuery Documentation
 <pre>
 {
 	"request":{
-		"kwargs":{
-			"url":"http://lxml.de"
-		}
+		"url":"http://lxml.de"
 	},
 	"handle":{
             "link locations":"//ul[@id='index-menu']//a/@href",
@@ -59,14 +57,12 @@ Donkey SubQuery Documentation
 }
 </pre>
 <p>
-	But what if not all of the things you want to grab have all the properties you need? Say you wanted the popular repository names and descriptions from <a href="https://github.com/gregroberts">this handsome man's</a> Github profile. We try to do the same thing:
+	But what if not all of the things you want to grab have all the properties you need? Say you wanted the popular repository names and descriptions from <a href="https://github.com/gregroberts">this handsome man</a>'s Github profile. We try to do the same thing:
 </p>
 <pre>
 {
 	"request":{
-		"kwargs":{
-			"url":"https://github.com/gregroberts"
-		}
+		"url":"https://github.com/gregroberts"
 	},
 	"handle":{
             "Repo Names":"//ul[contains(@class,'mini-repo-list')]//span[@class='repo']/@title",
@@ -98,9 +94,7 @@ But alas, not all the repositories have a description!
 <pre>
 {
 	"request":{
-		"kwargs":{
-			"url":"https://github.com/gregroberts"
-		}
+		"url":"https://github.com/gregroberts"
 	},
 	"handle":{
             "Popular Repositories":{
@@ -165,9 +159,7 @@ Order has been restored! We have each repository, it's name, and it's descriptio
 <pre>
 {
 	"request":{
-		"kwargs":{
-			"url":"https://github.com/gregroberts"
-		}
+		"url":"https://github.com/gregroberts"
 	},
 	"handle":{
 		"@base":"//ul[contains(@class,'mini-repo-list')]/li",

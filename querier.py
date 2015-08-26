@@ -24,13 +24,17 @@ def handles(response, to_handle):
 def crawls(qry, to_grab, to_handle):
 	'''does crawling based on a  given rule
 		until either the rule does not hold or maxiter has been reached'''
+	to_crawl = copy(qry['crawl'])
 	iters = 1
 	response = []
-	nextlink = qry['crawl']['next']
-	rule = qry['crawl'].get('rule','`true`')
+	try:
+		nextlink = to_crawl.pop('next')
+	except:
+		raise Exception('Crawler needs a \'next\' parameter', [])
+	rule = to_crawl.pop('rule','`true`')
 	#if no rule and no max, errrorrrrrr
-	maxiter = qry['crawl'].get('max',10)
-	crawl_kwargs = qry['crawl'].get('kwargs',{})
+	maxiter = to_crawl.pop('max',10)
+	crawl_kwargs = to_crawl
 	raw_response = request(to_grab)
 	res = handles(raw_response, to_handle)
 	if type(res) == list:
@@ -40,7 +44,7 @@ def crawls(qry, to_grab, to_handle):
 	link = handles(raw_response, nextlink)
 	valid = search(rule, link)
 	while valid and iters < maxiter:
-		link['kwargs'].update(crawl_kwargs)
+		link.update(crawl_kwargs)
 		pprint(link)
 		raw_response = request(link)
 		res = handles(raw_response, to_handle)
@@ -60,6 +64,7 @@ def query(qry):
 		-(how to handle)
 		-(crawl instructions)
 	most simple flow just has how to grab, then returns the result'''
+	qry = copy(qry)
 	to_handle = qry.get('handle',None)
 	try:
 		to_grab = qry['request']
@@ -76,12 +81,10 @@ def query(qry):
 if __name__ == '__main__':
 	test1 = {
 	'request':{
-		'freshness':0,
-		'grabber':'twitter',
-		'kwargs':{
-			'route':'search/tweets.json',
-			'q':'greg'
-			}
+		'@freshness':0,
+		'@grabber':'twitter',
+		'route':'search/tweets.json',
+		'q':'greg'
 		},
 	'handle':{
 		'@handler':'JMESPATH',
@@ -90,14 +93,10 @@ if __name__ == '__main__':
 		},
 	'crawl':{
 		'next':{
-			'kwargs':{
-				'route':'`search/tweets.json`',
-				'params':{
-					'q':'`greg`',
-					'max_id':'content.statuses[-1].id'
-					}
-				},
-			'grabber':'`twitter`',
+			'route':'`search/tweets.json`',
+			'q':'`greg`',
+			'max_id':'content.statuses[-1].id',
+			'@grabber':'`twitter`',
 			'@handler':'JMESPATH'
 			},
 		'max':10
@@ -107,31 +106,26 @@ if __name__ == '__main__':
 
 	test2 = {
 		'request':{
-			'kwargs':{
-				'url':'http://example.com'
-			}
+			'url':'http://example.com'
 		},
 		'handle':{
 			'title':'//title//text()'
-		}
+		}	}
+	print query(test2)
+	test3 = {
+		'request':{
+			'url':'http://www.amazon.com/Dancing-Cats-Creators-International-Seller/product-reviews/1452128332',		
+		},
+		'handle':{
+			'@base':'//div[@class=\'a-section review\']',
+			'title':'.//a[contains(@class,\'review-title\')]/text()',
+		},
+		'crawl':{
+			'next':{
+				'url':'//a[text()=\'Next\']/@href',	
+			},
+			'rule':'length(url)!=`0`',
+			'domain':'http://amazon.com/'
+		}	
 	}
-#	print query(test2)
-#	test3 = {
-#		'request':{
-#			'kwargs':{
-#				'url':'http://www.amazon.com/Dancing-Cats-Creators-International-Seller/product-reviews/1452128332',		
-#			}
-#		},
-#		'handle':{
-#			'@base':'//div[@class=\'a-section review\']',
-#			'title':'.//a[contains(@class,\'review-title\')]/text()',
-#		},
-#		'crawl':{
-#			'next':{'kwargs':{'url':'//a[text()=\'Next\']/@href'}},
-#			'rule':'length(kwargs.url)!=`0`',
-#			'kwargs':{
-#				'domain':'http://amazon.com/'
-#			}
-#		}	
-#	}
-#	pprint(query(test3))
+	pprint(query(test3))
