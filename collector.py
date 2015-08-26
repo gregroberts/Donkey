@@ -72,6 +72,13 @@ t_maps = {
 
 
 
+def finish(job_name, db_conn = None):
+	'''called once a collection has finished'''
+	db_cursor = db_conn.cursor()
+	db_cursor.execute('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % job_name)
+	db_conn.commit()
+
+
 def get_coldefs(cursor, tbl_name):
 	'''gets the type of each column'''
 	cursor.execute('SHOW COLUMNS from %s.%s' % (collector_schemaname, tbl_name))

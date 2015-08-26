@@ -7,20 +7,15 @@ from MySQLdb.cursors import DictCursor
 from copy import copy
 from rq import Queue
 from redis import Redis
-from collector import collection
+from collector import collection, finish
 import MySQLdb as madb
 import config as donk_conf
 import json
 
 
-def finish(job_name, db_conn = None):
-	'''called once a collection has finished'''
-	db_cursor = db_conn.cursor()
-	db_cursor.execute('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % job_name)
-	db_conn.commit()
 
 
-def schedule(db_cursor,redis_conn, _input, archetype, queue_name, job_name, inputsource = 'sql'):
+def schedule(db_cursor,redis_conn, _input, archetype, queue_name, collector_name, inputsource = 'sql'):
 	'''This guy does what it says on the tin. 
 	creates a list of jobs for rq, and adds them to the specified queue
 	'''
@@ -29,7 +24,7 @@ def schedule(db_cursor,redis_conn, _input, archetype, queue_name, job_name, inpu
 		db_cursor.execute(_input)
 		results = db_cursor.fetchall()
 	for index, row in enumerate(results):
-		job_name = '%s-%d' % (job_name, index)
+		job_name = '%s-%d' % (collector_name, index)
 		job = copy(archetype)
 		for col_n, col_v in row.items():
 			job = job.replace('{{%s}}' % col_n, col_v)
@@ -37,7 +32,7 @@ def schedule(db_cursor,redis_conn, _input, archetype, queue_name, job_name, inpu
 		job = json.loads(job.decode('string-escape'))
 		q.enqueue(collection, job, job_id= job_name)
 	#finally, add a job which finishes the collection
-	q.enqueue(finish, )
+	q.enqueue(finish, collector_name)
 
 def scheduler():
 	'''schedules all the colelctions which need doing'''
@@ -64,7 +59,8 @@ def scheduler():
 			   i['InputSource']
 			)
 		cursor.execute('''UPDATE Collections 
-					SET LastScheduled = curdate() 
+					SET LastScheduled = curdate() ,
+						InProgress = 1
 					WHERE CollectorName = \'%s\' ''' % i['CollectorName'])
 	mysql_conn.commit()
 
