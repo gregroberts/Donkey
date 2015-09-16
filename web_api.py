@@ -2,12 +2,14 @@ from flask import Flask, request, Response, abort, render_template
 from flask.ext.classy import FlaskView, route
 import config as donk_conf
 from redis import Redis
-from grabber import comp 
+import grabber
 from querier import query as donk_query
 from json import dumps
 from datetime import datetime
 import re, time
 from traceback import format_exc
+from pprint import pprint
+import handlers
 #Donkey Version 3 Web API
 
 
@@ -27,10 +29,17 @@ def response(success, body):
 		'success':success,
 		'response':body,
 	}
-	return Response(
-			response=dumps(res),
-			status = 200,
-			mimetype='application/json')
+	try:
+		return Response(
+				response=dumps(res),
+				status = 200,
+				mimetype='application/json')
+	except:
+		return Response(
+				response=format_exc().split('\n'),
+				status=500,
+				mimetype='application/json'
+			)
 
 
 class V3View(FlaskView):
@@ -39,11 +48,49 @@ class V3View(FlaskView):
 	rd_conn = Redis(host = donk_conf.REDIS_HOST,
 				port = donk_conf.REDIS_PORT)
 
+	def __get_query(self, name):
+		try:
+			query = self.rd_conn.hmget('library:%s' % name, ['params','description','saved','query'])
+			params = eval(query[0])
+			description = query[1]
+			date_saved = str(datetime.fromtimestamp(float(query[2])))
+			qry =  grabber.comp(query[3], un = True)
+			query = {
+				'name': name,
+				'description': description,
+				'required parameters': params,
+				'query':  qry,
+				'saved at': date_saved
+			}
+			return query
+		except Exception as e:
+			raise e
+
 	def index(self):
 		return render_template('api_docs.html')
 
 	def docs(self, route ):
 		return render_template('%s_docs.html' % route)
+
+	def edit(self, name):
+		'''this loads the query editing ui.
+		'''
+		gg = filter(lambda x: '_grabber' in x, grabber.grabbers.__dict__.keys())
+		grabbers = map(lambda x: x.replace('_grabber',''),gg)
+		handles = filter(lambda x: x.upper() == x, handlers.__dict__.keys())
+		if name != 'new':
+			query = self.__get_query(name)
+		else:
+			query = {}
+		return render_template('query_editor.html',
+						 grabbers = grabbers,
+						 handlers = handles,
+						 query = query
+						)
+
+	def list(self):
+		
+
 
 	def get_query(self, name):
 		'''searches for the query matching name,
@@ -53,24 +100,21 @@ class V3View(FlaskView):
 		'''
 		if request.method != 'GET':
 			abort(405)
-		query = self.rd_conn.hmget('library:%s' % name, ['params','description','saved','query'])
+		try:
+			res = __get_query(name)
+		except Exception as e:
+			res = {
+				'message':'error accessing Redis Query Library',
+				'exception':e
+			}
+			success = False
+			return response(success, res)
 		if query[0] is None:
 			res = {'message': 'Query name \'%s\' not found' % name}
 			success = False
 		else:
-			params = eval(query[0])
-			description = query[1]
-			date_saved = str(datetime.fromtimestamp(float(query[2])))
-			qry =  comp(query[3], un = True)
-			res = {
-				'name': name,
-				'description': description,
-				'required parameters': params,
-				'query':  qry,
-				'saved at': date_saved
-			}
 			success = True
-		return response(success, res)
+			return response(success, res)
 
 	def execute_query(self, name):
 		'''gets the query,fills it with parameters
@@ -82,7 +126,15 @@ class V3View(FlaskView):
 		'''
 		if request.method != 'GET':
 			abort(405)
-		query = self.rd_conn.hmget('library:%s' % name, ['params','description','saved','query'])
+		try:
+			query = self.rd_conn.hmget('library:%s' % name, ['params','description','saved','query'])
+		except Exception as e:
+			res = {
+				'message':'error accessing Redis Query Library',
+				'exception':e
+			}
+			success = False
+			return response(success, res)			
 		if query[0] is None:
 			res = {'message': 'Query name \'%s\' not found' % name}
 			success = False
@@ -90,7 +142,7 @@ class V3View(FlaskView):
 			params = eval(query[0])
 			description = query[1]
 			date_saved = str(datetime.fromtimestamp(float(query[2])))
-			qry =  comp(query[3], un = True)
+			qry =  grabber.comp(query[3], un = True)
 			if request.args.keys() != params:
 				res = {
 					'message':'supplied params do not match query parameters',
@@ -145,7 +197,7 @@ class V3View(FlaskView):
 			'params':query['parameters'],
 			'description':query['description'],
 			'saved':time.time(),
-			'query':comp(query['query'])
+			'query':grabber.comp(query['query'])
 		}
 		try:
 			self.rd_conn.hmset('library:%s' % query['name'], to_save)
@@ -158,7 +210,7 @@ class V3View(FlaskView):
 			success = False
 		return response(success, res)
 
-	def search(self,val):
+	def search_queries(self,val):
 		'''searches for all queries matching val
 		returns the json in  a nice list
 		ordered alphabetically
@@ -172,7 +224,7 @@ class V3View(FlaskView):
 			params = eval(query[0])
 			description = query[1]
 			date_saved = str(datetime.fromtimestamp(float(query[2])))
-			qry =  comp(query[3], un = True)
+			qry =  grabber.comp(query[3], un = True)
 			res = {
 				'name': i.replace('library:',''),
 				'description': description,
@@ -189,7 +241,7 @@ class V3View(FlaskView):
 		success = True
 		return response(success, res)
 
-	def list(self):
+	def list_queries(self):
 		'''Lists all the queries in the library
 		(accepts GET)'''
 		if request.method != 'GET':
@@ -201,7 +253,7 @@ class V3View(FlaskView):
 			params = eval(query[0])
 			description = query[1]
 			date_saved = str(datetime.fromtimestamp(float(query[2])))
-			qry =  comp(query[3], un = True)
+			qry =  grabber.comp(query[3], un = True)
 			res = {
 				'name': i.replace('library:',''),
 				'description': description,
@@ -233,11 +285,12 @@ class V3View(FlaskView):
 			print e
 			res = {
 				'query':query,
-				'exception message': e.args[0][0],
-				'exception traceback':e.args[0][1].split('\n')
+				'exception message': e.args[0],
+				'exception traceback':format_exc().split('\n')
 			}
 			success = False
 		return response(success, res)		
+
 
 
 application = Flask(__name__)

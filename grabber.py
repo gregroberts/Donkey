@@ -4,6 +4,7 @@ from cPickle import loads, dumps
 from time import time
 from zlib import compress, decompress
 import grabbers
+import warnings
 from traceback import format_exc
 
 #connect to Redis, cache db stores cache
@@ -38,14 +39,17 @@ def cache_insert(s_key,val):
 		'ts':time(),
 		'val':c_val
 	}
-	rd_conn.hmset(name, mapping)
-	rd_conn.expire(name, 864000)
+	try:
+		rd_conn.hmset(name, mapping)
+		rd_conn.expire(name, 864000)
+	except:
+		warnings.warn('Cannot connect to redis cache', Warning)
 
 def execute(key):
 	'''executes the request'''
 	which = key.pop('@grabber','request')
 	kwargs = key
-	how = grabbers.__dict__[which]
+	how = grabbers.__dict__['%s_grabber' % which]
 	val = how(kwargs)
 	return val
 
@@ -53,7 +57,10 @@ def check_cache(key, freshness = 30):
 	'''takes a request for data, serialises it,
 		then checks if that key exists in the cache'''
 	s_key = mk_key(key)
-	val = rd_conn.hgetall('cache:%s' % s_key)
+	try:
+		val = rd_conn.hgetall('cache:%s' % s_key)
+	except:
+		warnings.warn('Cannot communicate with Redis Cache!', Warning)
 	if val == {} or float(val['ts']) < time() - float(freshness*86400):
 		#couldn't find it, or not fresh, so make it!
 		try:

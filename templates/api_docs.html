@@ -49,9 +49,9 @@ Returns the full details of the query &lt;name&gt;
 <p><b>Example Successful request:</b> <a href="/v3/execute_query/test?url=http://example.com">/v3/execute_query/test?url=http://example.com</a></p>
 
 
-<h3>/v3/list/ (GET)</h3>
+<h3>/v3/list_queries/ (GET)</h3>
 Doesn't require any parameters, just returns a list of all the queries in the library.<br>
-<b>Try it out:</b> <a href="/v3/list/">/v3/list/</a>
+<b>Try it out:</b> <a href="/v3/list_queries/">/v3/list_queries/</a>
 
 
 
@@ -105,7 +105,7 @@ So you're writing a new query, and you want to use the web API to see if it is r
 
 
 
-<h3>/v3/save_query/ (POST)</h3>
+<h3>/v3/save_queries/ (POST)</h3>
 Your query is written and ready to be saved to the library. You have generalised it with a bunch of {{parameters}}, and given it a catchy name. Same method as above,  POST an object to this route of the following form:
 <pre>
 	{

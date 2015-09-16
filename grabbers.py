@@ -20,7 +20,7 @@ from urlparse import parse_qs
 		tries = 5, 
 		delay = 2,
 		backoff = 2)
-def request(kwargs):
+def request_grabber(kwargs):
 	'''kwargs must have at least:
 		-mime
 		-method
@@ -47,7 +47,7 @@ def request(kwargs):
 
 
 
-def twitter(kwargs):
+def twitter_grabber(kwargs):
 	'''kwargs must include:
 		-route. e.g. 
 			for https://api.twitter.com/1.1/search/tweets.json?q=%40twitterapi
@@ -77,7 +77,7 @@ def twitter(kwargs):
 
 
 
-def stackexchange(kwargs):
+def stackexchange_grabber(kwargs):
 	'''For accessing the stackexchange API
 	kwargs must include route, other kwargs will be put into qs
 	'''
@@ -99,7 +99,7 @@ def stackexchange(kwargs):
 
 
 
-def google_analytics(kwargs):
+def google_analytics_grabber(kwargs):
 	'''kwargs must include all the things the API docs ask for, with the same names:
 		https://developers.google.com/analytics/devguides/reporting/core/v3/coreDevguide'''
 	#set up service
