@@ -51,7 +51,8 @@ class V3View(FlaskView):
 	def __get_query(self, name):
 		try:
 			query = self.rd_conn.hmget('library:%s' % name, ['params','description','saved','query'])
-			params = eval(query[0])
+			print query
+			params = eval(query[0] or "[]")
 			description = query[1]
 			date_saved = str(datetime.fromtimestamp(float(query[2])))
 			qry =  grabber.comp(query[3], un = True)
@@ -64,10 +65,34 @@ class V3View(FlaskView):
 			}
 			return query
 		except Exception as e:
+			print e
 			raise e
 
+	def __search_queries(self, name = None):
+		if name:
+			keys = filter(lambda x: name in x.replace('library:',''), self.rd_conn.keys('library:*'))
+		else:
+			keys = self.rd_conn.keys('library:*')
+		results = []
+		for i in keys:
+			query = self.rd_conn.hmget(i, ['params','description','saved','query'])
+			params = eval(query[0])
+			description = query[1]
+			date_saved = str(datetime.fromtimestamp(float(query[2])))
+			qry =  grabber.comp(query[3], un = True)
+			res = {
+				'name': i.replace('library:',''),
+				'description': description,
+				'required parameters': params,
+				'query':  qry,
+				'saved at': date_saved
+			}
+			results.append(res)
+		return results
+
+
 	def index(self):
-		return render_template('api_docs.html')
+		return render_template('index.html')
 
 	def docs(self, route ):
 		return render_template('%s_docs.html' % route)
@@ -89,8 +114,22 @@ class V3View(FlaskView):
 						)
 
 	def list(self):
-		
+		queries = self.__search_queries()
+		for i in queries:
+			i['query'] = dumps(i['query'], indent=4)
+		return render_template('list_queries.html',
+								results = queries,
+								n=len(queries)
+								)
 
+	def search(self, query):
+		queries = self.__search_queries(query)
+		for i in queries:
+			i['query'] = dumps(i['query'], indent=4)
+		return render_template('list_queries.html',
+								results = queries,
+								n = len(queries)
+								)
 
 	def get_query(self, name):
 		'''searches for the query matching name,
@@ -217,22 +256,7 @@ class V3View(FlaskView):
 		(accepts GET)'''
 		if request.method != 'GET':
 			abort(405)
-		keys = filter(lambda x: val in x.replace('library:',''), self.rd_conn.keys('library:*'))
-		results = []
-		for i in keys:
-			query = self.rd_conn.hmget(i, ['params','description','saved','query'])
-			params = eval(query[0])
-			description = query[1]
-			date_saved = str(datetime.fromtimestamp(float(query[2])))
-			qry =  grabber.comp(query[3], un = True)
-			res = {
-				'name': i.replace('library:',''),
-				'description': description,
-				'required parameters': params,
-				'query':  qry,
-				'saved at': date_saved
-			}
-			results.append(res)
+		results = self.__search_queries(val)
 		res = {
 			'query':val,
 			'n_results':len(results),
@@ -246,22 +270,7 @@ class V3View(FlaskView):
 		(accepts GET)'''
 		if request.method != 'GET':
 			abort(405)
-		keys = self.rd_conn.keys('library:*')
-		results = []
-		for i in keys:
-			query = self.rd_conn.hmget(i, ['params','description','saved','query'])
-			params = eval(query[0])
-			description = query[1]
-			date_saved = str(datetime.fromtimestamp(float(query[2])))
-			qry =  grabber.comp(query[3], un = True)
-			res = {
-				'name': i.replace('library:',''),
-				'description': description,
-				'required parameters': params,
-				'query':  qry,
-				'saved at': date_saved
-			}
-			results.append(res)
+		results = self.__search_queries()
 		res = {
 			'queries':results,
 			'number of queries':len(results)
@@ -294,6 +303,7 @@ class V3View(FlaskView):
 
 
 application = Flask(__name__)
+application.config['APPLICATION_ROOT'] = donk_conf.web_prefix
 V3View.register(application)
 
 
