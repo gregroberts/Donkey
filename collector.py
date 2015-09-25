@@ -121,7 +121,7 @@ def collect(query_args, putter_args,db_conn=None):
 		if type(base) is list:
 			vals = [{key: search(val, i) for key,val in putter_args['mapping'].items()} for i in base]
 		elif type(base) is dict:
-			vals = {key: search(val, base) for key,val in putter_args['mapping'].items()} 	
+			vals = {key: search(val, base) for key,val in putter_args['mapping'].items()}
 		return vals
 	else:
 		cursor = db_conn.cursor()

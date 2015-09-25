@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Single Collection</title>
+	
+	<script src="/static/jquery-2.1.4.min.js"></script>
+	<script src="/static/jsoneditor.js"></script>
+	<script src="/static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+	<link href="/static/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+	<div class="row">
+		<div class="col-md-12">
+			<h1>Donkey Collection</h1>
+			<p>Here you can define a one off collection, this allows you to get data from lots of pages, and normalise it into json or a table.
+			This is also a good place to test this functionality before setting up a regular database collection.</p>			
+		</div>
+		<div class="col-md-6">
+			<form id="newCollection">
+				<div class="form-group">
+					<label for="archetype">Query Input</label>
+					<input type="archetype" placeholder="Place the data which will be used to hydrate your query">
+				</div>
+				<div class="form-group">
+					<label for="archetype">Input Type</label>
+					<select class="form-control">
+					    <option value="json">JSON</option>
+					    <option value="sql">SQL</option>
+					</select>
+				</div>	
+				<div class="form-group">
+					<label for="archetype">Mapping Base</label>
+					<input type="archetype" placeholder="This is the base against which the mapping will be applied">
+				</div>	
+				<div  id="mapping">
+				</div>				
+				<div class="form-group">
+					<label for="archetype">Query Archetype</label>
+					<div id="archetype"></div>
+				</div>
+			</form>
+			<button id ="test_collection" class="btn btn-primary">Test Collection</button>
+			<button class="btn btn-warning" id="run_collection">Run Collection</button>
+		</div>
+		<div class="col-md-6">
+			<div id="results">
+				<h3>Collection Result    <span id="successInd"></span></h3><div id="loading"></div>
+				
+				<pre id="resHolder">
+The result of your collection will show up here.
+				</pre>
+			</div>	
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	$(document).ready(function() {
+		var schema ={ 
+				disable_collapse:true,
+				disable_edit_json:true,
+				theme:'bootstrap3',
+				schema:{
+					type:"object",
+					title:"Mapping"
+				}
+			};
+		var mappingEditor = new JSONEditor(document.getElementById('mapping'), schema);
+		var schema ={ 
+			disable_collapse:true,
+			disable_edit_json:true,
+			theme:'bootstrap3',
+			schema:{
+				type:"object",
+				title:"query",
+				properties:{
+					request:{
+						type:"object",
+						properties:{
+							"@grabber":{
+								type:"string",
+								enum:[
+								{% for grabber in grabbers %}
+								"{{grabber}}",
+								{% endfor %}
+								],
+								default:"request",
+							},
+							"@freshness":{
+								type:"integer",
+								default:30,
+							},
+							url:{
+								type:"string",
+								default:"http://example.com"
+							}
+						},
+					required_by_default: true},					
+					handle:{
+						type:"object",
+						properties:{
+							"@handler":{
+								type:"string",
+								enum:[
+								{% for handle in handlers %}
+								"{{handle}}",
+								{% endfor %}
+								],
+								default:"XPATH"
+							},
+							title:{
+								type:"string",
+								default:"//title//text()"
+							}
+						}
+					}
+				},
+			}
+		};
+		var queryEditor = new JSONEditor(document.getElementById('archetype'), schema);
+		existing = {{query|tojson}};
+		if (! $.isEmptyObject(existing)){
+			queryEditor.setValue(existing.query);
+		};
+		function syntaxHighlight(json) {
+		    if (typeof json != 'string') {
+		         json = JSON.stringify(json, undefined, 2);
+		    }
+		    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+		        var cls = 'number';
+		        if (/^"/.test(match)) {
+		            if (/:$/.test(match)) {
+		                cls = 'key';
+		            } else {
+		                cls = 'string';
+		            }
+		        } else if (/true|false/.test(match)) {
+		            cls = 'boolean';
+		        } else if (/null/.test(match)) {
+		            cls = 'null';
+		        }
+		        return '<span class="' + cls + '">' + match + '</span>';
+		    });
+		};
+		function insertRes(val, success){
+			//inserts something into th result holder
+	  		prettyRes = syntaxHighlight(val, null, 2);
+	  		$('#resHolder').empty().html(prettyRes);
+	  		if (success==true) {
+	  			note='Success!';
+	  			colour='green';
+	  		} else {
+	  			note='Fail!';
+	  			colour='red'
+	  		};
+	  		$('#successInd').empty().html(note).css('color',colour);
+
+		}
+		function collect(limit){
+			$('#loading').append('loading');
+			var form = $('#newCollection')[0];
+			var query = {
+				input:form[0].value,
+				inputsource:form[1].value,
+				archetype:queryEditor.getValue(),
+				mapping:mappingEditor.getValue(),
+				map_base:form[2].value,
+				limit:limit
+			};
+			console.log(query);
+			$.ajax({
+				type:"POST",
+				async:false,
+				contentType:"application/json; charset=utf-8",
+				url:"/v3/collection/",
+				data: JSON.stringify(query),
+				success: function(data) {
+					insertRes(data.response, data.success);
+				},
+				dataType:"json"
+			})	;
+			$('#loading').empty();		
+		}
+		$('#test_collection').on('click', function() {
+			collect(1);
+		})
+		$('#run_collection').on('click', function() {
+			collect(0);
+		})		
+
+
+	});
+</script>
+</body>
+</html>

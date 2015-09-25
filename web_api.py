@@ -10,25 +10,18 @@ import re, time
 from traceback import format_exc
 from pprint import pprint
 import handlers
+from donkey import Donkey
 #Donkey Version 3 Web API
 
 
 #this whole thing could be a lot tidier, but idgaf!
 
 
-def fill(query, params):
-	'''puts params into query'''
-	qry = repr(query)
-	for i, j in params.items():
-		qry = re.sub('{{%s}}' % i, j, qry)
-	qry = eval(qry)
-	return qry
 
 def response(success, body):
 	res = {
 		'success':success,
-		'response':body,
-	}
+		'response':body}
 	try:
 		return Response(
 				response=dumps(res),
@@ -38,58 +31,12 @@ def response(success, body):
 		return Response(
 				response=format_exc().split('\n'),
 				status=500,
-				mimetype='application/json'
-			)
+				mimetype='application/json')
 
 
 class V3View(FlaskView):
 	#This is the main view we use for querying and writing queries
-
-	rd_conn = Redis(host = donk_conf.REDIS_HOST,
-				port = donk_conf.REDIS_PORT)
-
-	def __get_query(self, name):
-		try:
-			query = self.rd_conn.hmget('library:%s' % name, ['params','description','saved','query'])
-			print query
-			params = eval(query[0] or "[]")
-			description = query[1]
-			date_saved = str(datetime.fromtimestamp(float(query[2])))
-			qry =  grabber.comp(query[3], un = True)
-			query = {
-				'name': name,
-				'description': description,
-				'required parameters': params,
-				'query':  qry,
-				'saved at': date_saved
-			}
-			return query
-		except Exception as e:
-			print e
-			raise e
-
-	def __search_queries(self, name = None):
-		if name:
-			keys = filter(lambda x: name in x.replace('library:',''), self.rd_conn.keys('library:*'))
-		else:
-			keys = self.rd_conn.keys('library:*')
-		results = []
-		for i in keys:
-			query = self.rd_conn.hmget(i, ['params','description','saved','query'])
-			params = eval(query[0])
-			description = query[1]
-			date_saved = str(datetime.fromtimestamp(float(query[2])))
-			qry =  grabber.comp(query[3], un = True)
-			res = {
-				'name': i.replace('library:',''),
-				'description': description,
-				'required parameters': params,
-				'query':  qry,
-				'saved at': date_saved
-			}
-			results.append(res)
-		return results
-
+	d = Donkey()
 
 	def index(self):
 		return render_template('index.html')
@@ -104,7 +51,7 @@ class V3View(FlaskView):
 		grabbers = map(lambda x: x.replace('_grabber',''),gg)
 		handles = filter(lambda x: x.upper() == x, handlers.__dict__.keys())
 		if name != 'new':
-			query = self.__get_query(name)
+			query = self.d.get(name)
 		else:
 			query = {}
 		return render_template('query_editor.html',
@@ -113,23 +60,48 @@ class V3View(FlaskView):
 						 query = query
 						)
 
+	def search(self, query = None):
+		queries = self.d.search(query)
+		for i in queries:
+			i['query'] = dumps(i['query'], indent=4)
+		return render_template('list_queries.html',
+						results = queries,
+						n = len(queries))
 	def list(self):
-		queries = self.__search_queries()
-		for i in queries:
-			i['query'] = dumps(i['query'], indent=4)
-		return render_template('list_queries.html',
-								results = queries,
-								n=len(queries)
-								)
+		return self.search()
 
-	def search(self, query):
-		queries = self.__search_queries(query)
-		for i in queries:
-			i['query'] = dumps(i['query'], indent=4)
-		return render_template('list_queries.html',
-								results = queries,
-								n = len(queries)
-								)
+	def collect(self, name):
+		gg = filter(lambda x: '_grabber' in x, grabber.grabbers.__dict__.keys())
+		grabbers = map(lambda x: x.replace('_grabber',''),gg)
+		handles = filter(lambda x: x.upper() == x, handlers.__dict__.keys())
+		if name != 'new':
+			query = self.d.get(name)
+		else:
+			query = {}		
+		return render_template('collect_single.html',
+						 grabbers = grabbers,
+						 handlers = handles,
+						 query = query
+						)
+	@route('/collection/', methods = ['POST'])
+	def collection(self):
+		args = request.json
+		try:
+			result = list(self.d.collect(args['input'],
+							args['inputsource'],
+							args['archetype'],
+							args['mapping'],
+							args['map_base'],
+							#if limit not set, assume 0
+							args.get('limit', 0),
+							#collections through the web api always put on same queue
+							))
+			success = True
+		except:
+			success = False
+			result = format_exc().split('\n')
+		return response(success, result)
+
 
 	def get_query(self, name):
 		'''searches for the query matching name,
@@ -140,20 +112,16 @@ class V3View(FlaskView):
 		if request.method != 'GET':
 			abort(405)
 		try:
-			res = __get_query(name)
+			res = self.d.get(name)
+			success = True
+
 		except Exception as e:
 			res = {
 				'message':'error accessing Redis Query Library',
 				'exception':e
 			}
 			success = False
-			return response(success, res)
-		if query[0] is None:
-			res = {'message': 'Query name \'%s\' not found' % name}
-			success = False
-		else:
-			success = True
-			return response(success, res)
+		return response(success, res)
 
 	def execute_query(self, name):
 		'''gets the query,fills it with parameters
@@ -166,47 +134,19 @@ class V3View(FlaskView):
 		if request.method != 'GET':
 			abort(405)
 		try:
-			query = self.rd_conn.hmget('library:%s' % name, ['params','description','saved','query'])
+			qry = self.d.execute(name, request.args)
+			res = {
+				'query name':name,
+				'result':qry
+			}
+			success = True
 		except Exception as e:
 			res = {
-				'message':'error accessing Redis Query Library',
-				'exception':e
+				'name':name,
+				'exception message': str(e),
+				'exception traceback':format_exc().split('\n')
 			}
 			success = False
-			return response(success, res)			
-		if query[0] is None:
-			res = {'message': 'Query name \'%s\' not found' % name}
-			success = False
-		else:
-			params = eval(query[0])
-			description = query[1]
-			date_saved = str(datetime.fromtimestamp(float(query[2])))
-			qry =  grabber.comp(query[3], un = True)
-			if request.args.keys() != params:
-				res = {
-					'message':'supplied params do not match query parameters',
-					'supplied parameters':request.args.keys(),
-					'required parameters':params
-				}
-				success = False
-			else:
-				filled_qry = fill(qry, request.args)
-				try:
-					result = donk_query(filled_qry)
-					res = {
-						'query':filled_qry,
-						'name':name,
-						'result':result
-					}
-					success = True
-				except Exception as e:
-					res = {
-						'query':filled_qry,
-						'name':name,
-						'exception message': e.args[0][0],
-						'exception traceback':e.args[0][1].split('\n')
-					}
-					success = False
 		return response(success, res)
 
 	@route('/save_query/', methods = ['POST'])
@@ -216,8 +156,7 @@ class V3View(FlaskView):
 			-list of args
 			-name of query
 			-description of what query does
-		(accepts POST)
-		'''
+		(accepts POST)'''
 		query = request.json
 		req_types = {
 			'query':dict,
@@ -232,21 +171,14 @@ class V3View(FlaskView):
 			if not isinstance(query[name], _type):
 				args = (name, _type, type(query[name]))
 				res = {'message':'argument %s should be %s, instead, got %s' % args}
-		to_save = {
-			'params':query['parameters'],
-			'description':query['description'],
-			'saved':time.time(),
-			'query':grabber.comp(query['query'])
-		}
 		try:
-			self.rd_conn.hmset('library:%s' % query['name'], to_save)
-			res = {'message':'query saved successfully'}
+			msg = self.d.save(query['query'], query['parameters'], query['description'])
 			success = True
 		except:
-			exc = format_exc()
-			res = {'message':'query save failed',
-				  'exception':exc.split('\n')}
+			msg = format_exc().split('\n')
 			success = False
+
+		res = {'message':msg}
 		return response(success, res)
 
 	def search_queries(self,val):
@@ -256,7 +188,7 @@ class V3View(FlaskView):
 		(accepts GET)'''
 		if request.method != 'GET':
 			abort(405)
-		results = self.__search_queries(val)
+		results = self.d.search(val)
 		res = {
 			'query':val,
 			'n_results':len(results),
@@ -270,7 +202,7 @@ class V3View(FlaskView):
 		(accepts GET)'''
 		if request.method != 'GET':
 			abort(405)
-		results = self.__search_queries()
+		results = self.d.search()
 		res = {
 			'queries':results,
 			'number of queries':len(results)
@@ -287,7 +219,7 @@ class V3View(FlaskView):
 		try:
 			res = {
 				'query':query,
-				'response':donk_query(query)
+				'response':self.d.query(query)
 			}
 			success= True
 		except Exception as e:

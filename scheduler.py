@@ -15,7 +15,7 @@ import json
 
 
 
-def schedule(db_cursor,redis_conn, _input, archetype, queue_name, collector_name, inputsource = 'sql'):
+def schedule(db_cursor,redis_conn, _input, archetype, queue_name, collector_name, inputsource = 'sql', limit = 0):
 	'''This guy does what it says on the tin. 
 	creates a list of jobs for rq, and adds them to the specified queue
 	returns set of jobs, if you want to check on them
@@ -25,19 +25,26 @@ def schedule(db_cursor,redis_conn, _input, archetype, queue_name, collector_name
 		db_cursor.execute(_input)
 		results = db_cursor.fetchall()
 	elif inputsource == 'json':
-		results = json.loads(_input)
+		if isinstance(_input, basestring):
+			results = json.loads(_input)
+		else:
+			results = _input
 	job_rets = []
+	if limit != 0:
+		results = results[:limit]
+	print len(results)
 	for index, row in enumerate(results):
+		print 'kek'
 		job_name = '%s-%d' % (collector_name, index)
 		job = copy(archetype)
 		for col_n, col_v in row.items():
 			job = job.replace('{{%s}}' % col_n, str(col_v))
-		print job
 		job = json.loads(job.decode('string-escape'))
 		res = q.enqueue(collection, job, job_id= job_name)
 		job_rets.append(res)
 	#finally, add a job which finishes the collection
-	q.enqueue(finish, collector_name)
+	if collector_name[0] != '@':
+		q.enqueue(finish, collector_name)
 	return job_rets
 
 def scheduler():
