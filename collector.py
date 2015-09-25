@@ -92,7 +92,8 @@ def get_coldefs(cursor, tbl_name):
 
 
 def grab(data, params, cols):
-	'''constructs a single SQL query from a single object'''
+	'''constructs a single SQL query from a single object
+	'''
 	k_v = list(params['mapping'].items())
 	qry = ' %s INTO %s.%s \n' % (params.get('action','REPLACE'), collector_schemaname, params['table_name'])
 	qry += '(%s) VALUES \n' % ','.join(map(lambda x: x[0], k_v))
@@ -107,36 +108,82 @@ def grab(data, params, cols):
 
 
 def collect(query_args, putter_args,db_conn=None):
-	cursor = db_conn.cursor()
+	'''does the collection, either puts the data in a table
+		or returns it in a dictarray to the caller (in case of real time collection)
+	'''
 	data = d_q(query_args)
 	if putter_args['base'] != '':
 		base = search(putter_args['base'], data)
 	else:
 		base = data
-	cols = get_coldefs(cursor, putter_args['table_name'])
-	queries = []
-	if type(base) is list:
-		for i in base:
-			qry = grab(i,putter_args, cols)
-			queries.append(qry)
-	elif type(base) is dict:
-		queries.append(grab(base, putter_args, cols))
+	if putter_args['table_name'] == '@return':
+		#return a dictarray to be turned into a table
+		if type(base) is list:
+			vals = [{key: search(val, i) for key,val in putter_args['mapping'].items()} for i in base]
+		elif type(base) is dict:
+			vals = {key: search(val, base) for key,val in putter_args['mapping'].items()} 	
+		return vals
 	else:
-		raise Exception('Data Structure \'%s\' not recognised!' % type(base))
-	for qry in queries:
-		print qry
-		cursor.execute(qry)
-	db_conn.commit()
+		cursor = db_conn.cursor()
+		cols = get_coldefs(cursor, putter_args['table_name'])
+		queries = []
+		if type(base) is list:
+			for i in base:
+				qry = grab(i,putter_args, cols)
+				queries.append(qry)
+		elif type(base) is dict:
+			queries.append(grab(base, putter_args, cols))
+
+		else:
+			raise Exception('Data Structure \'%s\' not recognised!' % type(base))
+		for qry in queries:
+			cursor.execute(qry)
+		db_conn.commit()
 
 def collection(args, db_conn):
+	'''runs a collection and returns the result
+		(None for a SQL collection, dictarray for one off)
+	'''
 	query_args = args['query']
 	putter_args = args['putter']
-	collect(query_args,putter_args, db_conn)
+	return collect(query_args,putter_args, db_conn)
+
 
 
 if __name__ == '__main__':
+	#test regular collection
 	import dbapi
 	db = dbapi.mdb()
+#	qry = {
+#		'query':{
+#			'request':{
+#				'@grabber':'request',
+#				'url':'http://www.amazon.com/product-reviews/1782160000'
+#			},
+#			'handle':{
+#				'reviews':{
+#					'@base':'//div[@class=\'a-section review\']',
+#					'text':'.//a[contains(@class,\'review-title\')]/text()',
+#					'date':'.//span[contains(@class,\'review-date\')]/text()',
+#					'empty':'.//span[@class=\'nonexistent\']/text()',
+#					'num':'.//span[contains(@class,\'alt\')]/text()'
+#				}
+#
+#			}
+#		},
+#		'putter':{
+#			'table_name':'test',
+#			'base':'reviews',
+#			'mapping':{
+#				'testcol':'num[0]',
+#				'testcol1':'empty[0]',
+#				'testcol2':'date[0]'
+#			}
+#		}
+#	}
+#	collection(qry, db.keyconn)
+#	print d_q(qry['query'])#.encode('utf8',errors='replace')
+	#test return collection
 	qry = {
 		'query':{
 			'request':{
@@ -151,11 +198,11 @@ if __name__ == '__main__':
 					'empty':'.//span[@class=\'nonexistent\']/text()',
 					'num':'.//span[contains(@class,\'alt\')]/text()'
 				}
-				
+
 			}
 		},
 		'putter':{
-			'table_name':'test',
+			'table_name':'@return',
 			'base':'reviews',
 			'mapping':{
 				'testcol':'num[0]',
@@ -164,5 +211,5 @@ if __name__ == '__main__':
 			}
 		}
 	}
-	collection(qry, db.keyconn)
-	print d_q(qry['query'])#.encode('utf8',errors='replace')
+	print collection(qry, db.keyconn)
+

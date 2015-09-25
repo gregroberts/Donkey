@@ -18,21 +18,27 @@ import json
 def schedule(db_cursor,redis_conn, _input, archetype, queue_name, collector_name, inputsource = 'sql'):
 	'''This guy does what it says on the tin. 
 	creates a list of jobs for rq, and adds them to the specified queue
+	returns set of jobs, if you want to check on them
 	'''
 	q = Queue(queue_name, connection = redis_conn)
 	if inputsource == 'sql':
 		db_cursor.execute(_input)
 		results = db_cursor.fetchall()
+	elif inputsource == 'json':
+		results = json.loads(_input)
+	job_rets = []
 	for index, row in enumerate(results):
 		job_name = '%s-%d' % (collector_name, index)
 		job = copy(archetype)
 		for col_n, col_v in row.items():
-			job = job.replace('{{%s}}' % col_n, col_v)
+			job = job.replace('{{%s}}' % col_n, str(col_v))
 		print job
 		job = json.loads(job.decode('string-escape'))
-		q.enqueue(collection, job, job_id= job_name)
+		res = q.enqueue(collection, job, job_id= job_name)
+		job_rets.append(res)
 	#finally, add a job which finishes the collection
 	q.enqueue(finish, collector_name)
+	return job_rets
 
 def scheduler():
 	'''schedules all the colelctions which need doing'''
@@ -62,7 +68,7 @@ def scheduler():
 					SET LastScheduled = curdate() ,
 						InProgress = 1
 					WHERE CollectorName = \'%s\' ''' % i['CollectorName'])
-	mysql_conn.commit()
+		mysql_conn.commit()
 
 
 if __name__ == '__main__':
