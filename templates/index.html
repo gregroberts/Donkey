@@ -3,9 +3,9 @@
 	<title>
 	Donkey
 	</title>
-	<script src=".../static/jquery-2.1.4.min.js"></script>
-	<script src=".../static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
-	<link href=".../static/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
+	<script src="{prefix}/static/jquery-2.1.4.min.js"></script>
+	<script src="{prefix}/static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+	<link href="{prefix}/static/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
 <div class='container'>
@@ -13,9 +13,9 @@
 Welcome to the Donkey Server. this page contains links to all the other pages
 <hr>
 <div class="row">
-	<a href="/v3/edit/new" class="btn btn-primary" role="button">Construct a new query</a> - this will open the query editor and allows you to write and test new queries
+	<a href="{prefix}/v3/edit/new" class="btn btn-primary" role="button">Construct a new query</a> - this will open the query editor and allows you to write and test new queries
 	<hr>
-	<a href="/v3/list/" class="btn btn-primary" role="button">View all existing queries</a> - this will list all the queries saved on the server
+	<a href="{prefix}/v3/list/" class="btn btn-primary" role="button">View all existing queries</a> - this will list all the queries saved on the server
 	<hr>
     <div class="input-group">
       <span class="input-group-btn">
@@ -27,27 +27,27 @@ Welcome to the Donkey Server. this page contains links to all the other pages
 	<h2>Documentation</h2>
 	<ul>
 		<li>
-			<a href="/v3/docs/home">Documentation Home</a> - Links all the different sections of documentation
+			<a href="{prefix}/v3/docs/home">Documentation Home</a> - Links all the different sections of documentation
 		</li>	
 		<li>
-			<a href="/v3/docs/api">API Documentation</a> - Details of all the different routes available through the web API
+			<a href="{prefix}/v3/docs/api">API Documentation</a> - Details of all the different routes available through the web API
 		</li>
 		<li>
-			<a href="/v3/docs/query">Query Documentation</a> - Instructions on how to write new queries
+			<a href="{prefix}/v3/docs/query">Query Documentation</a> - Instructions on how to write new queries
 			<ul>
 				<li>
-					<a href="/v3/docs/grabber">Grabber documentation</a> - Documentation on how to use the different grabbers offered by Donkey
+					<a href="{prefix}/v3/docs/grabber">Grabber documentation</a> - Documentation on how to use the different grabbers offered by Donkey
 				</li>
 				<li>
-					<a href="/v3/docs/handler">Handler Documentation</a> - Documentation on the various handlers for parsing grabber responses
+					<a href="{prefix}/v3/docs/handler">Handler Documentation</a> - Documentation on the various handlers for parsing grabber responses
 				</li>
 				<li>
-					<a href="/v3/docs/subquery">Subquery Documentation</a> - Documentation on how to use Donkey's subquery feature
+					<a href="{prefix}/v3/docs/subquery">Subquery Documentation</a> - Documentation on how to use Donkey's subquery feature
 				</li>
 			</ul>
 		</li>
 		<li>
-			<a href="/v3/docs/collector">Collector Documentation</a> - Documentation on building collectors
+			<a href="{prefix}/v3/docs/collector">Collector Documentation</a> - Documentation on building collectors
 		</li>
 	</ul>
 
@@ -57,7 +57,7 @@ Welcome to the Donkey Server. this page contains links to all the other pages
 $(document).ready(function(){
 	$('#search').on('click', function() {
 		var term = $('#searchTerm').val();
-		window.open('/v3/search/'+term);
+		window.open('{prefix}/v3/search/'+term);
 	})
 })
 </script>
