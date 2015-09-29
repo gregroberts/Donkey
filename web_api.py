@@ -11,6 +11,7 @@ from traceback import format_exc
 from pprint import pprint
 import handlers
 from donkey import Donkey
+import rq_dashboard
 #Donkey Version 3 Web API
 
 
@@ -37,6 +38,11 @@ def response(success, body):
 class V3View(FlaskView):
 	#This is the main view we use for querying and writing queries
 	d = Donkey()
+
+	config = {
+		'REDIS_HOST':donk_conf.REDIS_HOST,
+		'REDIS_PORT':donk_conf.REDIS_PORT
+	}
 
 	def index(self):
 		return render_template('index.html')
@@ -83,6 +89,7 @@ class V3View(FlaskView):
 						 handlers = handles,
 						 query = query
 						)
+
 	@route('/collection/', methods = ['POST'])
 	def collection(self):
 		args = request.json
@@ -235,8 +242,11 @@ class V3View(FlaskView):
 
 
 application = Flask(__name__)
+application.config.from_object(rq_dashboard.default_settings)
+application.register_blueprint(rq_dashboard.dashboard)
 application.config['APPLICATION_ROOT'] = donk_conf.web_prefix
 V3View.register(application)
+
 
 
 if __name__==  '__main__':

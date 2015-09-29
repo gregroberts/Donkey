@@ -100,6 +100,10 @@ class Donkey:
 		self.rd_conn.hmset('library:%s' % name, to_save)
 		return 'query saved successfully'
 
+	def check_collection(self, prefix):
+		pass
+
+
 	def collect(self, _input, inputsource, query_archetype, mapping, map_base = '',limit =0, queue_name = 'RT_collection'):
 		'''runs a one off collection on RQ'''
 		job = {
@@ -115,8 +119,10 @@ class Donkey:
 		t_s = time.time()
 		results = schedule(cursor,self.rd_conn,_input,job,queue_name, '@OneOff-%d' % t_s, inputsource, limit)
 		for i in results: 
-			while i.result is None:
+			while i.status =='queued':
 				pass
+			if i.status == 'failed':
+				print i.exc_info
 			yield i.result
 
 

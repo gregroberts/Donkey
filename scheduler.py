@@ -21,6 +21,9 @@ def schedule(db_cursor,redis_conn, _input, archetype, queue_name, collector_name
 	returns set of jobs, if you want to check on them
 	'''
 	q = Queue(queue_name, connection = redis_conn)
+	print archetype
+	archetype = archetype.replace('"','\\\"')
+	print archetype
 	if inputsource == 'sql':
 		db_cursor.execute(_input)
 		results = db_cursor.fetchall()
