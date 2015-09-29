@@ -253,7 +253,7 @@ application.config.from_object(rq_dashboard.default_settings)
 application.register_blueprint(rq_dashboard.blueprint)
 application.config['APPLICATION_ROOT'] = donk_conf.web_prefix
 V3View.register(application)
-application.config['SESSION_COOKIE_PATH'] = donk_conf.web_prefix
+application.config['STATIC_FOLDER'] = donk_conf.web_prefix + 'static'
 
 
 if __name__==  '__main__':
