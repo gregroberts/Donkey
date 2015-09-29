@@ -243,7 +243,7 @@ class V3View(FlaskView):
 
 application = Flask(__name__)
 application.config.from_object(rq_dashboard.default_settings)
-application.register_blueprint(rq_dashboard.dashboard)
+application.register_blueprint(rq_dashboard.blueprint)
 application.config['APPLICATION_ROOT'] = donk_conf.web_prefix
 V3View.register(application)
 
