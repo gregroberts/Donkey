@@ -3,9 +3,9 @@
 	<title>
 	Donkey Queries
 	</title>
-	<script src="/static/jquery-2.1.4.min.js"></script>
-	<script src="/static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
-	<link href="/static/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
+	<script src="{{prefix}}/static/jquery-2.1.4.min.js"></script>
+	<script src="{{prefix}}/static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+	<link href="{{prefix}}/static/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
 <div class='container'>
@@ -22,7 +22,7 @@
 						<b>Saved At:</b> {{query['saved at']}}<br>
 						<b>Required Parameters: </b>{% for param in query['required parameters'] %} {{param}},{% endfor %}<br>
 						<b>Query Details:</b><pre>{{query.query}}</pre>
-						<a class="btn btn-primary" href="/v3/edit/{{query.name}}" role="button">Edit this query</a>
+						<a class="btn btn-primary" href="{{prefix}}/v3/edit/{{query.name}}" role="button">Edit this query</a>
 					</div>
 					<hr>
 				</div>

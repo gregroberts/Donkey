@@ -57,7 +57,8 @@ class V3View(FlaskView):
 						)
 
 	def docs(self, route ):
-		return render_template('%s_docs.html' % route)
+		return render_template('%s_docs.html' % route,
+						prefix = donk_conf.web_prefix)
 
 	def edit(self, name):
 		'''this loads the query editing ui.
@@ -72,7 +73,8 @@ class V3View(FlaskView):
 		return render_template('query_editor.html',
 						 grabbers = grabbers,
 						 handlers = handles,
-						 query = query
+						 query = query,
+						prefix = donk_conf.web_prefix
 						)
 
 	def search(self, query = None):
@@ -81,7 +83,8 @@ class V3View(FlaskView):
 			i['query'] = dumps(i['query'], indent=4)
 		return render_template('list_queries.html',
 						results = queries,
-						n = len(queries))
+						n = len(queries),
+						prefix = donk_conf.web_prefix)
 	def list(self):
 		return self.search()
 
@@ -96,7 +99,8 @@ class V3View(FlaskView):
 		return render_template('collect_single.html',
 						 grabbers = grabbers,
 						 handlers = handles,
-						 query = query
+						 query = query,
+						prefix = donk_conf.web_prefix
 						)
 
 	@route('/collection/', methods = ['POST'])

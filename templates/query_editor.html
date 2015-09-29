@@ -2,10 +2,10 @@
 <html>
 <head>
 	<title>Donkey Query Editor</title>
-	<script src="/static/jsoneditor.js"></script>
-	<script src="/static/jquery-2.1.4.min.js"></script>
-	<script src="/static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
-	<link href="/static/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
+	<script src="{{prefix}}/static/jsoneditor.js"></script>
+	<script src="{{prefix}}/static/jquery-2.1.4.min.js"></script>
+	<script src="{{prefix}}/static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+	<link href="{{prefix}}/static/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
 	
 </head>
 <body>
@@ -186,7 +186,7 @@ The result of your query will show up here.
 			$.ajax({
 			  type: "POST",
 			  contentType: "application/json; charset=utf-8",
-			  url: "/v3/test_query/",
+			  url: "{{prefix}}/v3/test_query/",
 			  data: JSON.stringify(query),
 			  success: function (data) {
 			  	insertRes(data.response,data.success);
@@ -218,7 +218,7 @@ The result of your query will show up here.
 				$.ajax({
 				  type: "POST",
 				  contentType: "application/json; charset=utf-8",
-				  url: "/v3/save_query/",
+				  url: "{{prefix}}/v3/save_query/",
 				  data: JSON.stringify(data),
 				  success: function (data) {
 				  	alert(data.response.message);

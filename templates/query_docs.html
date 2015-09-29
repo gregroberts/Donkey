@@ -3,7 +3,8 @@
 <title>
 Donkey Query Documentation
 </title>
-<link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css" rel="stylesheet">
+	<script src="{{prefix}}/static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+	<link href="{{prefix}}/static/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
 <div class="container">
@@ -32,7 +33,7 @@ Donkey Query Documentation
 	</p>
 <h2>Request</h2>
 <p>This is the most important part of the query. It determines what data you want, and how Donkey should get it.</p>
-<p>a request is fulfilled by a 'grabber', which is a function which takes a number of keyword arguments and returns data based on that. Documentation the various grabbers is available <a href="/v3/grabber_docs">here</a></p>
+<p>a request is fulfilled by a 'grabber', which is a function which takes a number of keyword arguments and returns data based on that. Documentation the various grabbers is available <a href="{{prefix}}/v3/grabber_docs">here</a></p>
 <p>It has the following structure:</p>
 <pre>
 {
@@ -72,7 +73,7 @@ Donkey Query Documentation
 </p>
 
 <h2>Handle (Optional)</h2>
-This bit of the query allows you to do some querying/filtering of the requested data, so you only get back that which you really need. Documentation on what different handlers may be used can be found <a href="/v3/docs/handler">here</a>
+This bit of the query allows you to do some querying/filtering of the requested data, so you only get back that which you really need. Documentation on what different handlers may be used can be found <a href="{{prefix}}/v3/docs/handler">here</a>
 <p>
 	It basically allows you to turn any external resource into a normalised JSON document. There is some basic functionality, and some more advanced functionality to help impose much needed order on external data.
 </p>
@@ -147,7 +148,7 @@ Useful!
 <br>
 Donkey's handling engine has some other features which are covered in other pages:
 <ul>
-	<li><a href="/v3/docs/subquery">Sub Queries</a> - Useful for imposing more yet more order on pages</li>
+	<li><a href="{{prefix}}/v3/docs/subquery">Sub Queries</a> - Useful for imposing more yet more order on pages</li>
 </ul>
 Just one so far!!
 
