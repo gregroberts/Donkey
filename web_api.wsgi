@@ -1,3 +1,7 @@
+import re, time, sys, os
+
+sys.path.append(os.path.dirname(__file__))
+
 from flask import Flask, request, Response, abort, render_template
 from flask.ext.classy import FlaskView, route
 import config as donk_conf
@@ -6,13 +10,16 @@ import grabber
 from querier import query as donk_query
 from json import dumps
 from datetime import datetime
-import re, time
+
 from traceback import format_exc
 from pprint import pprint
 import handlers
 from donkey import Donkey
 import rq_dashboard
+
+
 #Donkey Version 3 Web API
+
 
 
 #this whole thing could be a lot tidier, but idgaf!
