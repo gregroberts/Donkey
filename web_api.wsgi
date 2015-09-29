@@ -52,7 +52,9 @@ class V3View(FlaskView):
 	}
 
 	def index(self):
-		return render_template('index.html')
+		return render_template('index.html',
+						prefix = donk_conf.web_prefix
+						)
 
 	def docs(self, route ):
 		return render_template('%s_docs.html' % route)
