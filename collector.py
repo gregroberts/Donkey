@@ -54,7 +54,7 @@ def finish(job_name,length, db_conn = None):
 	db_cursor.execute('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % collector_name)
 	db_conn.commit()
 	failed = Queue('failed', connection = redis_conn, async=False)
-	failed_jobs = filter(lambda x: collector_name in x.id, failed.jobs)
+	failed_jobs = filter(lambda x: job_name in x.id, failed.jobs)
 	failed_reasons = ',\n'.join(i.exc_info for i in failed_jobs)
 	failed_reasons = failed_reasons.replace('\'','')
 	statement = '''INSERT INTO Collections_Log
