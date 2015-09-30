@@ -26,12 +26,6 @@ from MySQLdb import escape_string
 from config import collector_schemaname
 
 
-def dodate(_in):
-	'''parses a datelike thing into a date string'''
-	dd = parser.parse(_in)
-	ddd = '\' %s\'' % dd
-	return ddd
-
 def do_str(_in):
 	'''deals with stringlike things'''
 	if type(_in) is type(None):
@@ -43,80 +37,58 @@ def do_str(_in):
 	return ' \' %s \' ' % gg
 
 
-#maps mysql types to python types
-t_maps = {
-	'date':dodate,
-	'datetime':dodate,
-	'timestamp': float,
-	'time':dodate,
-	'year':int,
-	'char':do_str,
-	'varchar':do_str,
-	'blob':do_str,
-	'text':do_str,
-	'tinyblob': do_str,
-	'tinytext': do_str,
-	'mediumblob': do_str,
-	'mediumtext':do_str,
-	'longblob': do_str,
-	'longtext': do_str,
-	'enum': repr,
-	'intotinyint': int,
-	'smallint':int,
-	'mediumint':int,
-	'bigint': int,
-	'float': float,
-	'double': float,
-	'decimal': float,
-}
-
-
-
 def finish(job_name, db_conn = None):
 	'''called once a collection has finished'''
+	collector_name = job_name.split('-')[0]
+	print collector_name
+	if db_conn == None:
+		#for debug
+		import dbapi
+		db = dbapi.mdb()
+		db_conn = db.keyconn
 	db_cursor = db_conn.cursor()
-	db_cursor.execute('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % job_name)
+	db_cursor.execute('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % collector_name)
 	db_conn.commit()
 	#check failed queue for jobs
 	#email?
 
-def get_coldefs(cursor, tbl_name):
-	'''gets the type of each column'''
-	cursor.execute('SHOW COLUMNS from %s.%s' % (collector_schemaname, tbl_name))
-	names = map(lambda x: (x[0],x[1]),cursor.fetchall())
-	n_d = {}
-	for i in names:
-		var_name = i[0]
-		base_type = findall('(\w+)',i[1])[0].lower()
-		n_d[var_name] = t_maps.get(base_type, do_str)
-	return n_d
 
-def mk_table(putter_args):
-	print putter_args
+def mk_table(putter_args, db_cursor):
+	table_name = putter_args['table_name']
+	columns = putter_args['mapping'].keys()
+	col_stmnt = ',\n'.join(map(lambda x: '`%s` TEXT(500)' % x,columns))
+	statement = '''CREATE TABLE IF NOT EXISTS `%s`.`%s` (
+		`id` int(11) NOT NULL AUTO_INCREMENT,
+		`CollectorName` varchar(255) DEFAULT '',
+		`Collected` datetime DEFAULT 0,
+		`etl_status` int(2) DEFAULT 0,
+		%s,
+		PRIMARY KEY (`id`)
+	) ENGINE=InnoDB AUTO_INCREMENT=168 DEFAULT CHARSET=latin1;
+	''' % (collector_schemaname, table_name, col_stmnt)
+	db_cursor.execute(statement)
 
 
-def grab(data, params, cols):
+def grab(data, params, collector_name):
 	'''constructs a single SQL query from a single object
 	'''
-
 	k_v = list(params['mapping'].items())
-	qry = ' %s INTO %s.%s \n' % (params.get('action','REPLACE'), collector_schemaname, params['table_name'])
-	qry += '(%s) VALUES \n' % ','.join(map(lambda x: x[0], k_v))
-	vals = []
+	qry = ' INSERT INTO %s.%s \n' % (collector_schemaname, params['table_name'])
+	qry += '(CollectorName, Collected,%s) VALUES \n' % ','.join(map(lambda x: x[0], k_v))
+	vals = [do_str(collector_name.split('-')[0]), 'NOW()']
 	for col_name, col_loc in k_v:
 		val = search(col_loc, data)
-		s_val = cols[col_name](val)
+		s_val = do_str(val)
 		vals.append(s_val)
 	qry += '(%s)' % ','.join(vals)
 	return qry
 
 
 
-def collect(query_args, putter_args,db_conn=None):
+def collect(query_args, putter_args, collector_name, db_conn=None):
 	'''does the collection, either puts the data in a table
 		or returns it in a dictarray to the caller (in case of real time collection)
 	'''
-	mk_table(putter_args)
 	data = d_q(query_args)
 	if putter_args['base'] != '':
 		base = search(putter_args['base'], data)
@@ -131,35 +103,39 @@ def collect(query_args, putter_args,db_conn=None):
 		return vals
 	else:
 		cursor = db_conn.cursor()
-		cols = get_coldefs(cursor, putter_args['table_name'])
+		mk_table(putter_args, cursor)
+		db_conn.commit()
 		queries = []
 		if type(base) is list:
 			for i in base:
-				qry = grab(i,putter_args, cols)
+				qry = grab(i,putter_args, collector_name)
 				queries.append(qry)
 		elif type(base) is dict:
-			queries.append(grab(base, putter_args, cols))
-
+			queries.append(grab(base, putter_args, collector_name))
 		else:
 			raise Exception('Data Structure \'%s\' not recognised!' % type(base))
 		for qry in queries:
 			cursor.execute(qry)
 		db_conn.commit()
 
-def collection(args, db_conn):
+def collection(args,collector_name, db_conn=None):
 	'''runs a collection and returns the result
-		(None for a SQL collection, dictarray for one off)
-	'''
+		(None for a SQL collection, dictarray for one off)'''
+	if db_conn == None:
+		import dbapi
+		db = dbapi.mdb()
+		db_conn = db.keyconn
 	query_args = args['query']
 	putter_args = args['putter']
-	return collect(query_args,putter_args, db_conn)
+	return collect(query_args,putter_args,collector_name, db_conn)
 
 
 
 if __name__ == '__main__':
 	#test regular collection
 	import dbapi
-	db = dbapi.mdb()
+	db = dbapi.mdb()	
+	
 #	qry = {
 #		'query':{
 #			'request':{
