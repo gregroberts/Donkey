@@ -12,7 +12,7 @@ import MySQLdb as madb
 import config as donk_conf
 import json, time
 
-testing = True
+testing = False
 mysql_conn= madb.connect(host=donk_conf.MySQL_host,
 				    user=donk_conf.MySQL_user,
 				    passwd=donk_conf.MySQL_passwd,
