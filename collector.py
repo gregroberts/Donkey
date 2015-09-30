@@ -24,7 +24,9 @@ from re import findall
 from dateutil import parser
 from MySQLdb import escape_string
 from config import collector_schemaname
-
+from rq import Queue
+from redis import Redis
+import config as donk_conf
 
 def do_str(_in):
 	'''deals with stringlike things'''
@@ -37,20 +39,40 @@ def do_str(_in):
 	return ' \' %s \' ' % gg
 
 
-def finish(job_name, db_conn = None):
+def finish(job_name,length, db_conn = None):
 	'''called once a collection has finished'''
 	collector_name = job_name.split('-')[0]
-	print collector_name
-	if db_conn == None:
-		#for debug
-		import dbapi
-		db = dbapi.mdb()
-		db_conn = db.keyconn
+	redis_conn = Redis(host = donk_conf.REDIS_HOST,
+			 port = donk_conf.REDIS_PORT)
+#	print collector_name
+#	if db_conn == None:
+#		#for debug
+#		import dbapi
+#		db = dbapi.mdb()
+#		db_conn = db.keyconn
 	db_cursor = db_conn.cursor()
 	db_cursor.execute('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % collector_name)
 	db_conn.commit()
-	#check failed queue for jobs
-	#email?
+	failed = Queue('failed', connection = redis_conn, async=False)
+	failed_jobs = filter(lambda x: collector_name in x.id, failed.jobs)
+	failed_reasons = ',\n'.join(i.exc_info for i in failed_jobs)
+	failed_reasons = failed_reasons.replace('`','')
+	statement = '''INSERT INTO Collections_Log
+			(CollectorName,JobName,TimeFinished,Jobs,Failures,ExceptionStrings)
+	VALUES (`%s`,
+		`%s`,
+		NOW(),
+		%d,
+		%d,
+		`%s`
+		)
+	''' % (collector_name,
+		 job_name,
+		 length,
+		 len(failed_jobs),
+		 failed_reasons)
+	db_cursor.execute(statement)
+	db_conn.commit()
 
 
 def mk_table(putter_args, db_cursor):
@@ -65,7 +87,7 @@ def mk_table(putter_args, db_cursor):
 		%s,
 		PRIMARY KEY (`id`)
 	) ENGINE=InnoDB AUTO_INCREMENT=168 DEFAULT CHARSET=latin1;
-	''' % (collector_schemaname, table_name, col_stmnt)
+	''' % (donk_conf.collector_schemaname, table_name, col_stmnt)
 	db_cursor.execute(statement)
 
 
@@ -73,7 +95,7 @@ def grab(data, params, collector_name):
 	'''constructs a single SQL query from a single object
 	'''
 	k_v = list(params['mapping'].items())
-	qry = ' INSERT INTO %s.%s \n' % (collector_schemaname, params['table_name'])
+	qry = ' INSERT INTO %s.%s \n' % (donk_conf.collector_schemaname, params['table_name'])
 	qry += '(CollectorName, Collected,%s) VALUES \n' % ','.join(map(lambda x: x[0], k_v))
 	vals = [do_str(collector_name.split('-')[0]), 'NOW()']
 	for col_name, col_loc in k_v:
@@ -121,10 +143,10 @@ def collect(query_args, putter_args, collector_name, db_conn=None):
 def collection(args,collector_name, db_conn=None):
 	'''runs a collection and returns the result
 		(None for a SQL collection, dictarray for one off)'''
-	if db_conn == None:
-		import dbapi
-		db = dbapi.mdb()
-		db_conn = db.keyconn
+#	if db_conn == None:
+#		import dbapi
+#		db = dbapi.mdb()
+#		db_conn = db.keyconn
 	query_args = args['query']
 	putter_args = args['putter']
 	return collect(query_args,putter_args,collector_name, db_conn)

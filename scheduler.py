@@ -12,7 +12,7 @@ import MySQLdb as madb
 import config as donk_conf
 import json, time
 
-testing = False
+testing = True
 mysql_conn= madb.connect(host=donk_conf.MySQL_host,
 				    user=donk_conf.MySQL_user,
 				    passwd=donk_conf.MySQL_passwd,
@@ -51,7 +51,7 @@ def schedule(db_cursor,redis_conn, _input, archetype, queue_name, collector_name
 	#finally, add a job which finishes the collection
 	if collector_name[0] != '@':
 		#if name starts with @, tis a RT_collection
-		q.enqueue(finish, collector_name)
+		q.enqueue(finish, collector_name, len(results))
 	return job_rets
 
 def scheduler():

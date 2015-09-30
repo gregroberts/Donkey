@@ -26,7 +26,7 @@
 			<form id="newCollection">
 				<div class="form-group">
 					<label for="archetype">Query Input</label>
-					<input type="archetype" placeholder="Place the data which will be used to hydrate your query">
+					<textarea class="form-control" type="archetype" rows="5" placeholder="Place the data which will be used to hydrate your query"></textarea>
 				</div>
 				<div class="form-group">
 					<label for="archetype">Input Type</label>
@@ -68,6 +68,50 @@ The result of your collection will show up here.
 		</div>
 	</div>
 </div>
+
+<!--Save query Modal-->
+<div class="modal fade" id="saveModal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Save a New Query</h4>
+      </div>
+      <div class="modal-body">
+      		<p>
+      			Before Continuing, make sure you have inserted all the parameters you want into your query, and that it is behaving as expected!
+      		</p>
+      		<hr>
+      		<pre id="query_preview"></pre>
+      		<hr>
+      		<p>
+      			If everything is correct, fill in the form and save the query
+      		</p>
+      		<form id="saveForm">
+      			<div class="form-group">
+	      			<label for="q_name">Query Name</label>
+	      			<input type="name" class="form-control" id="q_name" placeholder="Query Name">
+      			</div>
+      			<div class="form-group">
+      				<label for="q_description">Query Description</label>
+      				<input type="description" class="form-control" id="q_description" placeholder="Query Description">
+      			</div>
+      			<div class="form-group">
+      				<label for="q_parameters">Query Parameters</label>
+      				<input type="parameters" class="form-control" id="q_parameters" placeholder="Comma-seperated list of parameters e.g. url,isbn,etc...">
+      			</div>      			
+      		</form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" id="saveQuery">Save Query</button>
+      </div>
+    </div>
+  </div>	
+</div>
+
+
+
 <script type="text/javascript">
 	$(document).ready(function() {
 		//initialise tabs on RH panel
