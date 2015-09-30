@@ -77,7 +77,8 @@ def finish(job_name, db_conn = None):
 	db_cursor = db_conn.cursor()
 	db_cursor.execute('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % job_name)
 	db_conn.commit()
-
+	#check failed queue for jobs
+	#email?
 
 def get_coldefs(cursor, tbl_name):
 	'''gets the type of each column'''
@@ -90,10 +91,14 @@ def get_coldefs(cursor, tbl_name):
 		n_d[var_name] = t_maps.get(base_type, do_str)
 	return n_d
 
+def mk_table(putter_args):
+	print putter_args
+
 
 def grab(data, params, cols):
 	'''constructs a single SQL query from a single object
 	'''
+
 	k_v = list(params['mapping'].items())
 	qry = ' %s INTO %s.%s \n' % (params.get('action','REPLACE'), collector_schemaname, params['table_name'])
 	qry += '(%s) VALUES \n' % ','.join(map(lambda x: x[0], k_v))
@@ -111,6 +116,7 @@ def collect(query_args, putter_args,db_conn=None):
 	'''does the collection, either puts the data in a table
 		or returns it in a dictarray to the caller (in case of real time collection)
 	'''
+	mk_table(putter_args)
 	data = d_q(query_args)
 	if putter_args['base'] != '':
 		base = search(putter_args['base'], data)

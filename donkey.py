@@ -100,11 +100,7 @@ class Donkey:
 		self.rd_conn.hmset('library:%s' % name, to_save)
 		return 'query saved successfully'
 
-	def check_collection(self, prefix):
-		pass
-
-
-	def collect(self, _input, inputsource, query_archetype, mapping, map_base = '',limit =0, queue_name = 'RT_collection'):
+	def collect(self, _input, inputsource, query_archetype, mapping, map_base = '',limit =0, queue_name = 'RT_collection', async = False):
 		'''runs a one off collection on RQ'''
 		job = {
 			'query':query_archetype,
@@ -118,12 +114,19 @@ class Donkey:
 		cursor = self.mysql_conn.cursor(cursorclass = DictCursor)
 		t_s = time.time()
 		results = schedule(cursor,self.rd_conn,_input,job,queue_name, '@OneOff-%d' % t_s, inputsource, limit)
-		for i in results: 
-			while i.status =='queued':
-				pass
-			if i.status == 'failed':
-				print i.exc_info
-			yield i.result
+		if async == False:
+			res = []
+			for i in results: 
+				while i.status =='queued':
+					pass
+				if i.status == 'failed':
+					print i.exc_info
+				if type(i.result) == list:
+					res.extend(i.result)
+				else:
+					res.append(i.result)
+			return res
+		return results
 
 
 

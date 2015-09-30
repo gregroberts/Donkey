@@ -29,7 +29,8 @@ import rq_dashboard
 def response(success, body):
 	res = {
 		'success':success,
-		'response':body}
+		'response':body
+	}
 	try:
 		return Response(
 				response=dumps(res),
@@ -46,10 +47,6 @@ class V3View(FlaskView):
 	#This is the main view we use for querying and writing queries
 	d = Donkey()
 
-	config = {
-		'REDIS_HOST':donk_conf.REDIS_HOST,
-		'REDIS_PORT':donk_conf.REDIS_PORT
-	}
 
 	def index(self):
 		return render_template('index.html',
@@ -105,9 +102,13 @@ class V3View(FlaskView):
 
 	@route('/collection/', methods = ['POST'])
 	def collection(self):
+		def yield_col(res):
+			for i in res:
+				yield dumps(i)
+
 		args = request.json
 		try:
-			result = list(self.d.collect(args['input'],
+			result = self.d.collect(args['input'],
 							args['inputsource'],
 							args['archetype'],
 							args['mapping'],
@@ -115,7 +116,8 @@ class V3View(FlaskView):
 							#if limit not set, assume 0
 							args.get('limit', 0),
 							#collections through the web api always put on same queue
-							))
+							async = False
+							)
 			success = True
 		except:
 			success = False
@@ -192,7 +194,7 @@ class V3View(FlaskView):
 				args = (name, _type, type(query[name]))
 				res = {'message':'argument %s should be %s, instead, got %s' % args}
 		try:
-			msg = self.d.save(query['query'], query['parameters'], query['description'])
+			msg = self.d.save(query['query'], query['parameters'], query['name'], query['description'])
 			success = True
 		except:
 			msg = format_exc().split('\n')
@@ -250,17 +252,19 @@ class V3View(FlaskView):
 				'exception traceback':format_exc().split('\n')
 			}
 			success = False
-		return response(success, res)		
+		return response(success, res)
 
 
 
 application = Flask(__name__)
-application.config.from_object(rq_dashboard.default_settings)
-application.register_blueprint(rq_dashboard.blueprint)
-application.config['APPLICATION_ROOT'] = donk_conf.web_prefix
 V3View.register(application)
-application.config['STATIC_FOLDER'] = donk_conf.web_prefix + 'static'
-
+application.config['REDIS_HOST'] = donk_conf.REDIS_HOST
+application.config['REDIS_PORT'] = donk_conf.REDIS_PORT
+application.config['REDIS_PASSWORD'] = None
+application.config['REDIS_DB'] = 0
+application.config['RQ_POLL_INTERVAL'] = 2500 
+application.config['DEBUG'] = False
+application.register_blueprint(rq_dashboard.blueprint)
 
 if __name__==  '__main__':
 	application.run(host='0.0.0.0',debug = True)

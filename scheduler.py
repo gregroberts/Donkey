@@ -10,7 +10,7 @@ from redis import Redis
 from collector import collection, finish
 import MySQLdb as madb
 import config as donk_conf
-import json
+import json, time
 
 
 
@@ -20,10 +20,8 @@ def schedule(db_cursor,redis_conn, _input, archetype, queue_name, collector_name
 	creates a list of jobs for rq, and adds them to the specified queue
 	returns set of jobs, if you want to check on them
 	'''
-	q = Queue(queue_name, connection = redis_conn)
-	print archetype
+	q = Queue(queue_name, connection = redis_conn, async=True)
 	archetype = archetype.replace('"','\\\"')
-	print archetype
 	if inputsource == 'sql':
 		db_cursor.execute(_input)
 		results = db_cursor.fetchall()
@@ -35,23 +33,23 @@ def schedule(db_cursor,redis_conn, _input, archetype, queue_name, collector_name
 	job_rets = []
 	if limit != 0:
 		results = results[:limit]
-	print len(results)
 	for index, row in enumerate(results):
-		print 'kek'
 		job_name = '%s-%d' % (collector_name, index)
 		job = copy(archetype)
 		for col_n, col_v in row.items():
 			job = job.replace('{{%s}}' % col_n, str(col_v))
+
 		job = json.loads(job.decode('string-escape'))
 		res = q.enqueue(collection, job, job_id= job_name)
 		job_rets.append(res)
 	#finally, add a job which finishes the collection
 	if collector_name[0] != '@':
+		#if name starts with @, tis a RT_collection
 		q.enqueue(finish, collector_name)
 	return job_rets
 
 def scheduler():
-	'''schedules all the colelctions which need doing'''
+	'''schedules all the collections which need doing'''
 	mysql_conn= madb.connect(host=donk_conf.MySQL_host,
 					    user=donk_conf.MySQL_user,
 					    passwd=donk_conf.MySQL_passwd,
@@ -66,12 +64,13 @@ def scheduler():
 				 ''')
 	jobs = cursor.fetchall()
 	for i in jobs:
+		collector_name = '%s-%d' % (i['CollectorName'] , time.time())
 		schedule(cursor,
 			   redis_conn,
 			   i['Input'],
 			   i['Archetype'],
 			   i['QueueName'],
-			   i['CollectorName'],
+			   collector_name,
 			   i['InputSource']
 			)
 		cursor.execute('''UPDATE Collections 

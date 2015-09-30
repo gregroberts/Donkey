@@ -5,14 +5,18 @@
 	
 	<script src="{{prefix}}/static/jquery-2.1.4.min.js"></script>
 	<script src="{{prefix}}/static/jsoneditor.js"></script>
-	<script src="{{prefix}}/static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
 	<link href="{{prefix}}/static/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet">
+	<script src="{{prefix}}/static/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+	
+	<link rel="stylesheet" type="text/css" href="{{prefix}}/static/DataTables/datatables.min.css"/>
+	<script type="text/javascript" src="{{prefix}}/static/DataTables/datatables.min.js"></script>
+
 </head>
 <body>
 <div class="container">
 	<div class="row">
 		<div class="col-md-12">
-			<h1>Donkey Collection</h1>
+			<h1>Donkey Collection</h1><a href="{{prefix}}/v3/dashboard">Goto RQ Dashboard</a>
 			<p>Here you can define a one off collection, this allows you to get data from lots of pages, and normalise it into json or a table.
 			This is also a good place to test this functionality before setting up a regular database collection.</p>			
 		</div>
@@ -27,8 +31,8 @@
 				<div class="form-group">
 					<label for="archetype">Input Type</label>
 					<select class="form-control">
-					    <option value="json">JSON</option>
-					    <option value="sql">SQL</option>
+						<option value="json">JSON</option>
+						<option value="sql">SQL</option>
 					</select>
 				</div>	
 				<div class="form-group">
@@ -45,17 +49,43 @@
 		</div>
 		<div class="col-md-6">
 			<div id="results">
-				<h3>Collection Result    <span id="successInd"></span></h3><div id="loading"></div>
-				
-				<pre id="resHolder">
+				<h3>Collection Result <span id="successInd"></span></h3><div id="loading">Tis Loadin'</div>
+				<ul class="nav nav-tabs" role="tablist" id="TAB">
+					<li role="presentation" class="active"><a data-toggle="tab" href="#resTable" role="tab">Table</a></li>
+					<li role="presentation"><a data-toggle="tab" href="#resJson" role="tab">Json</a></li>
+				</ul>
+				<div class="tab-content">
+					<div role="tabpanel" class="tab-pane active" id="resTable">
+						<table id="resDataTable"></table>
+					</div>
+					<div role="tabpanel" class="tab-pane" id="resJson">
+						<pre id="resHolder">
 The result of your collection will show up here.
-				</pre>
-			</div>	
+						</pre>	
+					</div>
+				</div>	
+			</div>
 		</div>
 	</div>
 </div>
 <script type="text/javascript">
 	$(document).ready(function() {
+		//initialise tabs on RH panel
+		$('.nav-tabs a').click(function (e) {
+		  e.preventDefault()
+		  $(this).tab('show')
+		})
+		//set up loading flow
+		$('#loading').hide();
+		jQuery.ajaxSetup({
+			beforeSend: function() {
+				$('#loading').show();
+		  	},
+			complete: function(){
+				$('#loading').hide();
+		  	}
+		});
+		//initialise mapping schema 
 		var schema ={ 
 				disable_collapse:true,
 				disable_edit_json:true,
@@ -66,6 +96,8 @@ The result of your collection will show up here.
 				}
 			};
 		var mappingEditor = new JSONEditor(document.getElementById('mapping'), schema);
+
+		//initialise collection query object
 		var schema ={ 
 			disable_collapse:true,
 			disable_edit_json:true,
@@ -118,47 +150,85 @@ The result of your collection will show up here.
 			}
 		};
 		var queryEditor = new JSONEditor(document.getElementById('archetype'), schema);
+
+		//if this page has been called with an existing query (loaded from template) then insert this into the query schema instead
 		existing = {{query|tojson}};
 		if (! $.isEmptyObject(existing)){
 			queryEditor.setValue(existing.query);
 		};
+
+		//for prettyprinting json responses
 		function syntaxHighlight(json) {
-		    if (typeof json != 'string') {
-		         json = JSON.stringify(json, undefined, 2);
-		    }
-		    json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-		    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
-		        var cls = 'number';
-		        if (/^"/.test(match)) {
-		            if (/:$/.test(match)) {
-		                cls = 'key';
-		            } else {
-		                cls = 'string';
-		            }
-		        } else if (/true|false/.test(match)) {
-		            cls = 'boolean';
-		        } else if (/null/.test(match)) {
-		            cls = 'null';
-		        }
-		        return '<span class="' + cls + '">' + match + '</span>';
-		    });
+			if (typeof json != 'string') {
+				 json = JSON.stringify(json, undefined, 2);
+			};
+			json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+			return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (match) {
+				var cls = 'number';
+				if (/^"/.test(match)) {
+					if (/:$/.test(match)) {
+						cls = 'key';
+					} else {
+						cls = 'string';
+					}
+				} else if (/true|false/.test(match)) {
+					cls = 'boolean';
+				} else if (/null/.test(match)) {
+					cls = 'null';
+				}
+				return '<span class="' + cls + '">' + match + '</span>';
+			});
 		};
+
+		//initialise an initial empty table because DataTables was written by arseholes
+
+		//for filling the results table
 		function insertRes(val, success){
-			//inserts something into th result holder
-	  		prettyRes = syntaxHighlight(val, null, 2);
-	  		$('#resHolder').empty().html(prettyRes);
-	  		if (success==true) {
-	  			note='Success!';
-	  			colour='green';
-	  		} else {
-	  			note='Fail!';
-	  			colour='red'
-	  		};
-	  		$('#successInd').empty().html(note).css('color',colour);
+			//get & insert the pretty json
+			prettyRes = syntaxHighlight(val, null, 2);
+			$('#resHolder').empty().html(prettyRes);
+
+			//build an array
+			var cols = [],vals = [];
+			for (property in val[0]){
+				cols.push({title:property})
+			};
+			$.each(val, function(index,Rvalue){
+				r = [];
+				$.each(cols, function(index, Cvalue){
+					r.push(Rvalue[Cvalue.title]);
+				});
+				vals.push(r);
+			});		
+
+			//debuggin
+			console.log(vals);
+			console.log(cols);
+			console.log(val);
+
+			//destroy a table, make a table
+			if (typeof table !== 'undefined') {table.destroy();};
+			
+			table = $('#resDataTable').empty().DataTable({
+				data:vals,
+				columns:cols,
+				//at least they don't enfore hungarian notation anymore
+			});
+
+			//flag succesness
+			if (success==true) {
+				note='Success!';
+				colour='green';
+			} else {
+				note='Fail!';
+				colour='red'
+			};			
+			$('#successInd').empty().html(note).css('color',colour);
+
 
 		}
 		function collect(limit){
-			$('#loading').append('loading');
+			//this chap does the collectin'
 			var form = $('#newCollection')[0];
 			var query = {
 				input:form[0].value,
@@ -168,10 +238,10 @@ The result of your collection will show up here.
 				map_base:form[2].value,
 				limit:limit
 			};
-			console.log(query);
+			//get & insert the data
 			$.ajax({
 				type:"POST",
-				async:false,
+				async:true,
 				contentType:"application/json; charset=utf-8",
 				url:"{{prefix}}/v3/collection/",
 				data: JSON.stringify(query),
@@ -179,9 +249,10 @@ The result of your collection will show up here.
 					insertRes(data.response, data.success);
 				},
 				dataType:"json"
-			})	;
-			$('#loading').empty();		
+			});		
 		}
+
+		//buttons
 		$('#test_collection').on('click', function() {
 			collect(1);
 		})

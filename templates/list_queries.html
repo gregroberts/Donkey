@@ -23,6 +23,8 @@
 						<b>Required Parameters: </b>{% for param in query['required parameters'] %} {{param}},{% endfor %}<br>
 						<b>Query Details:</b><pre>{{query.query}}</pre>
 						<a class="btn btn-primary" href="{{prefix}}/v3/edit/{{query.name}}" role="button">Edit this query</a>
+						<a class="btn btn-primary" href="{{prefix}}/v3/collect/{{query.name}}" role="button">Start a Collection with this query</a>
+						
 					</div>
 					<hr>
 				</div>
