@@ -56,15 +56,15 @@ def finish(job_name,length, db_conn = None):
 	failed = Queue('failed', connection = redis_conn, async=False)
 	failed_jobs = filter(lambda x: collector_name in x.id, failed.jobs)
 	failed_reasons = ',\n'.join(i.exc_info for i in failed_jobs)
-	failed_reasons = failed_reasons.replace('`','')
+	failed_reasons = failed_reasons.replace('\'','')
 	statement = '''INSERT INTO Collections_Log
 			(CollectorName,JobName,TimeFinished,Jobs,Failures,ExceptionStrings)
-	VALUES (`%s`,
-		`%s`,
+	VALUES ('%s',
+		'%s',
 		NOW(),
 		%d,
 		%d,
-		`%s`
+		'%s'
 		)
 	''' % (collector_name,
 		 job_name,
