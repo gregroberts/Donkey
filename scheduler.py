@@ -47,7 +47,7 @@ def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsou
 			(CollectorName, JobName, TimeStarted,Jobs)
 			VALUES ('%s','%s',NOW(),%d)
 		''' % (collector_name.split('-')[0], collector_name, len(results)))
-	db_conn.commit()
+	mysql_conn.commit()
 	for index, row in enumerate(results):
 		job_name = '%s-%d' % (collector_name, index)
 		job = copy(archetype)
