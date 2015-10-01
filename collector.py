@@ -57,20 +57,17 @@ def finish(job_name,length, db_conn = None):
 	failed_jobs = filter(lambda x: job_name in x.id, failed.jobs)
 	failed_reasons = ',\n'.join(i.exc_info for i in failed_jobs)
 	failed_reasons = failed_reasons.replace('\'','')
-	statement = '''INSERT INTO Collections_Log
+	statement = '''UPDATE Collections_Log
 			(CollectorName,JobName,TimeFinished,Jobs,Failures,ExceptionStrings)
-	VALUES ('%s',
-		'%s',
-		NOW(),
-		%d,
-		%d,
-		'%s'
-		)
-	''' % (collector_name,
+			SET TimeFinished = NOW(),
+				Failures = %d,
+				ExceptionStrings = '%s'
+			WHERE JobName = '%s'
+			AND CollectorName = '%s'
+	''' % (len(failed_jobs),
+		 failed_reasons,
 		 job_name,
-		 length,
-		 len(failed_jobs),
-		 failed_reasons)
+		 collector_name)
 	db_cursor.execute(statement)
 	db_conn.commit()
 
