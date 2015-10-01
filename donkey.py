@@ -111,9 +111,8 @@ class Donkey:
 			}
 		}
 		job = json.dumps(job)
-		cursor = self.mysql_conn.cursor(cursorclass = DictCursor)
 		t_s = time.time()
-		results = schedule(cursor,self.rd_conn,_input,job,queue_name, '@OneOff-%d' % t_s, inputsource, limit)
+		results = schedule(self.rd_conn,_input,job,queue_name, '@OneOff-%d' % t_s, inputsource, limit)
 		if async == False:
 			res = []
 			for i in results: 

@@ -89,6 +89,7 @@ class V3View(FlaskView):
 						 handlers = handles,
 						 query = query
 						)
+		
 
 	@route('/collection/', methods = ['POST'])
 	def collection(self):
