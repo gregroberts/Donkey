@@ -23,7 +23,7 @@ redis_conn = Redis(host = donk_conf.REDIS_HOST,
 
 
 
-def schedule(db_conn,redis_conn, _input, archetype, queue_name, collector_name, inputsource = 'sql', limit = 0):
+def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsource = 'sql', limit = 0):
 	'''This guy does what it says on the tin. 
 	creates a list of jobs for rq, and adds them to the specified queue
 	returns set of jobs, if you want to check on them
@@ -31,7 +31,7 @@ def schedule(db_conn,redis_conn, _input, archetype, queue_name, collector_name, 
 	#set async = false for testing
 	q = Queue(queue_name, connection = redis_conn, async= not testing)
 	archetype = archetype.replace('"','\\\"')
-	db_cursor = db_conn.cursor(cursorclass = DictCursor)
+	db_cursor = mysql_conn.cursor(cursorclass = DictCursor)
 	if inputsource == 'sql':
 		db_cursor.execute(_input)
 		results = db_cursor.fetchall()
@@ -72,8 +72,7 @@ def scheduler():
 	jobs = cursor.fetchall()
 	for i in jobs:
 		collector_name = '%s-%d' % (i['CollectorName'] , time.time())
-		schedule(mysql_conn,
-			   redis_conn,
+		schedule(redis_conn,
 			   i['Input'],
 			   i['Archetype'],
 			   i['QueueName'],
