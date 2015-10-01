@@ -87,7 +87,7 @@ def mk_table(putter_args, db_cursor):
 	try:
 		db_cursor.execute(statement)
 	except Exception as e:
-		raise('%s - %s' % (e,statement))
+		raise(Exception('%s - %s' % (e,statement)))
 
 
 def grab(data, params, collector_name):
