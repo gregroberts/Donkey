@@ -22,22 +22,23 @@
 		</div>
 		<div class="col-md-6">
 					<button id ="test_collection" class="btn btn-primary">Test Collection</button>
-			<button class="btn btn-warning" id="run_collection">Run Collection</button>
+					<button class="btn btn-warning" id="run_collection">Run Collection</button>
+					<button class="btn btn-warning" data-toggle="modal"  data-target="#saveModal">Set up Recurring Collection</button>
 			<form id="newCollection">
 				<div class="form-group">
 					<label for="archetype">Query Input</label>
-					<textarea class="form-control" type="archetype" rows="5" placeholder="Place the data which will be used to hydrate your query"></textarea>
+					<textarea class="form-control" type="archetype" rows="5" placeholder="Place the data which will be used to hydrate your query" id="mapInput"></textarea>
 				</div>
 				<div class="form-group">
 					<label for="archetype">Input Type</label>
-					<select class="form-control">
+					<select class="form-control" id="colInput">
 						<option value="json">JSON</option>
 						<option value="sql">SQL</option>
 					</select>
 				</div>	
 				<div class="form-group">
 					<label for="archetype">Mapping Base</label>
-					<input type="archetype" placeholder="This is the base against which the mapping will be applied">
+					<input type="archetype" placeholder="This is the base against which the mapping will be applied" id="mapBase">
 				</div>	
 				<div  id="mapping">
 				</div>				
@@ -75,36 +76,48 @@ The result of your collection will show up here.
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Save a New Query</h4>
+        <h4 class="modal-title" id="myModalLabel">Start a new recurring Collection</h4>
       </div>
       <div class="modal-body">
       		<p>
-      			Before Continuing, make sure you have inserted all the parameters you want into your query, and that it is behaving as expected!
+      			Before Continuing, make sure the collection is behaving as expected. Once saved, your collection will be added to the list of active collectors
       		</p>
-      		<hr>
-      		<pre id="query_preview"></pre>
-      		<hr>
       		<p>
-      			If everything is correct, fill in the form and save the query
+      			Jobs are scheduled on a daily basis, so you collection will be run within the next few days.
       		</p>
+      		<hr>
       		<form id="saveForm">
       			<div class="form-group">
-	      			<label for="q_name">Query Name</label>
-	      			<input type="name" class="form-control" id="q_name" placeholder="Query Name">
+	      			<label for="q_name"><b>Collector Name</b> - An identifier, which clearly denotes what the collector is. NOTE, Collector names cannot include dashes ("-")</label>
+	      			<input type="name" class="form-control" id="c_name" placeholder="Collector Name">
       			</div>
       			<div class="form-group">
-      				<label for="q_description">Query Description</label>
-      				<input type="description" class="form-control" id="q_description" placeholder="Query Description">
+      				<label for="q_description"><b>Collector Description</b> - A short description of the purpose of the collector</label>
+      				<input type="description" class="form-control" id="c_description" placeholder="Collector Description">
       			</div>
       			<div class="form-group">
-      				<label for="q_parameters">Query Parameters</label>
-      				<input type="parameters" class="form-control" id="q_parameters" placeholder="Comma-seperated list of parameters e.g. url,isbn,etc...">
-      			</div>      			
+      				<label for="c_frequency"><b>Collector Frequency</b> - How frequently (In <b>days</b> the collector should re run</label>
+      				<input type="parameters" class="form-control" id="c_freq" placeholder="e.g. 7, 30, 999999">
+      			</div>
+      			<div class="form-group">
+      				<label for="c_table"><b>Table Name</b> - The database table to put the data into. If it doesn't exist, it will be created with the variables defined in the collector mapping</label>
+      				<input type="parameters" class="form-control" id="c_table">
+      			</div>
+      			<div class="form-group">
+      				<label for="c_queue"><b>Queue Name</b> - The Queue to put the collection jobs into. Each queue has a different speed, so be wary if you are hitting an external data source that might get annoyed and ban us :(</label>
+  				<select class="form-control">
+					<option value="high">High - Executes jobs as quickly as possible</option>
+					<option value="medium">Medium - Executes jobs with a 2s interval</option>
+					<option value="low">Low - Executes jobs with a 5s interval (cautious)</option>
+				</select>
+      			</div>
+
+
       		</form>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-primary" id="saveQuery">Save Query</button>
+        <button type="button" class="btn btn-primary" id="saveCollection">Save Collection</button>
       </div>
     </div>
   </div>	
@@ -299,11 +312,73 @@ The result of your collection will show up here.
 		//buttons
 		$('#test_collection').on('click', function() {
 			collect(1);
-		})
+		});
 		$('#run_collection').on('click', function() {
 			collect(0);
-		})		
+		});		
 
+		$('#saveCollection').on('click', function() {
+			function isPositiveInteger(n) {
+			    return n >>> 0 === parseFloat(n);
+			}
+			var form = $("#saveForm")[0];
+			var name = form[0].value;
+			if (name == "") {
+				alert("You must enter a Name");
+				return false;
+			}
+			var desc = form[1].value;
+			if (desc == "") {
+				alert("You must enter a Description");
+				return false;
+			}
+			var freq = form[2].value;
+			if (! isPositiveInteger(freq)){
+				alert("Frequency must be an integer");
+				return false;
+			}
+			var table = form[3].value;
+			if (table == ""){
+				alert("You must enter a Table Name");
+				return false;
+			}
+			var queue = form[4].value;
+			var query_args = queryEditor.getValue();
+			var map_input = mappingEditor.getValue();
+			var map_base = $('#mapBase').text();
+			var _input = $('#mapInput').val();
+			var inputType = $('#colInput').val();
+			var archetype = {
+				query: query_args,
+				putter: {
+					base:map_base,
+					table_name:table,
+					mapping:map_input
+				}
+			}
+			var req = {
+				CollectorName: name,
+				QueueName: queue,
+				Frequency: freq,
+				InputSource:inputType,
+				Input: _input,
+				Archetype: archetype,
+				CollectorDescription: desc
+			};
+			console.log(req);
+			//save the collector
+			$.ajax({
+				type:"POST",
+				async:false,
+				contentType:"application/json; charset=utf-8",
+				url:"{{prefix}}/v3/setup_collector/",
+				data: JSON.stringify(req),
+				success: function(data) {
+					console.log(data);
+				},
+				dataType:"json"
+			});		
+		});
 
 	});
 </script>

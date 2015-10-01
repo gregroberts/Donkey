@@ -84,7 +84,10 @@ def mk_table(putter_args, db_cursor):
 		PRIMARY KEY (`id`)
 	) ENGINE=InnoDB AUTO_INCREMENT=168 DEFAULT CHARSET=latin1;
 	''' % (donk_conf.collector_schemaname, table_name, col_stmnt)
-	db_cursor.execute(statement)
+	try:
+		db_cursor.execute(statement)
+	except Exception as e:
+		raise('%s - %s' (e,statement))
 
 
 def grab(data, params, collector_name):

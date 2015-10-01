@@ -1,7 +1,3 @@
-import re, time, sys, os
-
-sys.path.append(os.path.dirname(__file__))
-
 from flask import Flask, request, Response, abort, render_template
 from flask.ext.classy import FlaskView, route
 import config as donk_conf
@@ -10,16 +6,13 @@ import grabber
 from querier import query as donk_query
 from json import dumps
 from datetime import datetime
-
+import re, time
 from traceback import format_exc
 from pprint import pprint
 import handlers
 from donkey import Donkey
 import rq_dashboard
-
-
 #Donkey Version 3 Web API
-
 
 
 #this whole thing could be a lot tidier, but idgaf!
@@ -29,8 +22,7 @@ import rq_dashboard
 def response(success, body):
 	res = {
 		'success':success,
-		'response':body
-	}
+		'response':body}
 	try:
 		return Response(
 				response=dumps(res),
@@ -47,15 +39,16 @@ class V3View(FlaskView):
 	#This is the main view we use for querying and writing queries
 	d = Donkey()
 
+	config = {
+		'REDIS_HOST':donk_conf.REDIS_HOST,
+		'REDIS_PORT':donk_conf.REDIS_PORT
+	}
 
 	def index(self):
-		return render_template('index.html',
-						prefix = donk_conf.web_prefix
-						)
+		return render_template('index.html')
 
 	def docs(self, route ):
-		return render_template('%s_docs.html' % route,
-						prefix = donk_conf.web_prefix)
+		return render_template('%s_docs.html' % route)
 
 	def edit(self, name):
 		'''this loads the query editing ui.
@@ -70,8 +63,7 @@ class V3View(FlaskView):
 		return render_template('query_editor.html',
 						 grabbers = grabbers,
 						 handlers = handles,
-						 query = query,
-						prefix = donk_conf.web_prefix
+						 query = query
 						)
 
 	def search(self, query = None):
@@ -80,10 +72,9 @@ class V3View(FlaskView):
 			i['query'] = dumps(i['query'], indent=4)
 		return render_template('list_queries.html',
 						results = queries,
-						n = len(queries),
-						prefix = donk_conf.web_prefix)
+						n = len(queries))
 	def list(self):
-		return self.search()
+		return self.search()#
 
 	def collect(self, name):
 		gg = filter(lambda x: '_grabber' in x, grabber.grabbers.__dict__.keys())
@@ -96,19 +87,28 @@ class V3View(FlaskView):
 		return render_template('collect_single.html',
 						 grabbers = grabbers,
 						 handlers = handles,
-						 query = query,
-						prefix = donk_conf.web_prefix
+						 query = query
 						)
+
+	@route('/setup_collector/', methods = ['POST'])
+	def setup_collector(self):
+		req = request.json
+		try:
+			res =self.d.setup_collector(req)
+		except:
+			print 'dddddd'
+			res = format_exc()
+			print res
+		return res
+
+
+
 
 	@route('/collection/', methods = ['POST'])
 	def collection(self):
-		def yield_col(res):
-			for i in res:
-				yield dumps(i)
-
 		args = request.json
 		try:
-			result = self.d.collect(args['input'],
+			result = list(self.d.collect(args['input'],
 							args['inputsource'],
 							args['archetype'],
 							args['mapping'],
@@ -116,8 +116,7 @@ class V3View(FlaskView):
 							#if limit not set, assume 0
 							args.get('limit', 0),
 							#collections through the web api always put on same queue
-							async = False
-							)
+							))
 			success = True
 		except:
 			success = False
@@ -194,7 +193,7 @@ class V3View(FlaskView):
 				args = (name, _type, type(query[name]))
 				res = {'message':'argument %s should be %s, instead, got %s' % args}
 		try:
-			msg = self.d.save(query['query'], query['parameters'], query['name'], query['description'])
+			msg = self.d.save(query['query'], query['parameters'], query['description'])
 			success = True
 		except:
 			msg = format_exc().split('\n')
@@ -252,19 +251,17 @@ class V3View(FlaskView):
 				'exception traceback':format_exc().split('\n')
 			}
 			success = False
-		return response(success, res)
+		return response(success, res)		
 
 
 
 application = Flask(__name__)
-V3View.register(application)
-application.config['REDIS_HOST'] = donk_conf.REDIS_HOST
-application.config['REDIS_PORT'] = donk_conf.REDIS_PORT
-application.config['REDIS_PASSWORD'] = None
-application.config['REDIS_DB'] = 0
-application.config['RQ_POLL_INTERVAL'] = 2500 
-application.config['DEBUG'] = False
+application.config.from_object(rq_dashboard.default_settings)
 application.register_blueprint(rq_dashboard.blueprint)
+application.config['APPLICATION_ROOT'] = donk_conf.web_prefix
+V3View.register(application)
+
+
 
 if __name__==  '__main__':
 	application.run(host='0.0.0.0',debug = True)

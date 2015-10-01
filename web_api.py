@@ -74,7 +74,7 @@ class V3View(FlaskView):
 						results = queries,
 						n = len(queries))
 	def list(self):
-		return self.search()
+		return self.search()#
 
 	def collect(self, name):
 		gg = filter(lambda x: '_grabber' in x, grabber.grabbers.__dict__.keys())
@@ -89,7 +89,17 @@ class V3View(FlaskView):
 						 handlers = handles,
 						 query = query
 						)
-		
+
+	@route('/setup_collector', methods = ['POST'])
+	def setup_collector(self):
+		req = request.json
+		try:
+			res =self.d.setup_collector(req)
+		except:
+			res = format_exc()
+		return res
+
+
 
 	@route('/collection/', methods = ['POST'])
 	def collection(self):
