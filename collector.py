@@ -58,7 +58,6 @@ def finish(job_name,length, db_conn = None):
 	failed_reasons = ',\n'.join(i.exc_info for i in failed_jobs)
 	failed_reasons = failed_reasons.replace('\'','')
 	statement = '''UPDATE Collections_Log
-			(CollectorName,JobName,TimeFinished,Jobs,Failures,ExceptionStrings)
 			SET TimeFinished = NOW(),
 				Failures = %d,
 				ExceptionStrings = '%s'
