@@ -1,6 +1,7 @@
 
 import sys
-sys.path.append(__file__)
+sys.path.append('/home/doug/Donkey')
+print __file__
 from flask import Flask, request, Response, abort, render_template
 from flask.ext.classy import FlaskView, route
 import config as donk_conf
