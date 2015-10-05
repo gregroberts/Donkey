@@ -278,10 +278,9 @@ class V3View(FlaskView):
 application = Flask(__name__)
 application.config['REDIS_HOST'] = donk_conf.REDIS_HOST
 application.config['REDIS_PORT'] = donk_conf.REDIS_PORT
+application.config['RQ_POLL_INTERVAL'] = 3000
 application.config['APPLICATION_ROOT'] = donk_conf.web_prefix
-application.register_blueprint(rq_dashboard.blueprint)
-
-
+application.register_blueprint(rq_dashboard.blueprint, url_prefix='/v3/dashboard' )
 V3View.register(application)
 
 
