@@ -4,7 +4,7 @@ from querier import query as donk_query
 import time, grabber, re, json
 from datetime import datetime
 import MySQLdb as madb
-from scheduler import schedule
+from scheduler import schedule, scheduler
 from MySQLdb.cursors import DictCursor
 
 
@@ -30,6 +30,8 @@ class Donkey:
 					    db=donk_conf.MySQL_db)
 	def query(self, query):
 		return donk_query(query)
+
+
 
 	def search(self, name = None):
 		'''searches the query library for a given term'''
@@ -112,7 +114,7 @@ class Donkey:
 		}
 		job = json.dumps(job)
 		t_s = time.time()
-		results = schedule(self.rd_conn,_input,job,queue_name, '@OneOff-%d' % t_s, inputsource, limit)
+		results = schedule(self.rd_conn,_input,job,queue_name, '@OneOff-%d' % t_s, inputsource, limit, self.mysql_conn)
 		if async == False:
 			res = []
 			for i in results: 
@@ -146,6 +148,16 @@ class Donkey:
 		self.mysql_conn.commit()
 		return 'ddd'
 
+	def run_collectors(self, names):
+		'''if you want to override the normal frequency of a collector,
+			provide a list of names to do, and they will be scheduled'''
+		scheduler(names, self.mysql_conn)
+
+	def list_collectors(self):
+		c = self.mysql_conn.cursor(cursorclass = DictCursor)
+		c.execute('SELECT * from Collections')
+		collections = c.fetchall()
+		return collections
 
 
 if __name__ == '__main__':

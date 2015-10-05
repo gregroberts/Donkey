@@ -80,7 +80,7 @@ class V3View(FlaskView):
 						n = len(queries),
 						prefix = donk_conf.web_prefix)
 	def list(self):
-		return self.search()#
+		return self.search()
 
 	def collect(self, name):
 		gg = filter(lambda x: '_grabber' in x, grabber.grabbers.__dict__.keys())
@@ -97,6 +97,13 @@ class V3View(FlaskView):
 						 prefix = donk_conf.web_prefix
 						)
 
+	@route('/run_collectors/',methods = ['POST'])
+	def run_collectors(self):
+		names =request.json
+		print names
+		self.d.run_collectors(names)
+		return response(True,{'message':'Collectors have been added'})
+
 	@route('/setup_collector/', methods = ['POST'])
 	def setup_collector(self):
 		req = request.json
@@ -108,6 +115,12 @@ class V3View(FlaskView):
 			print res
 		return res
 
+	def collectors(self):
+		collectors = self.d.list_collectors()
+		return render_template('collectors.html',
+						prefix = donk_conf.web_prefix,
+						n = len(collectors),
+						collectors = collectors)
 
 
 
@@ -263,9 +276,12 @@ class V3View(FlaskView):
 
 
 application = Flask(__name__)
-application.config.from_object(rq_dashboard.default_settings)
-application.register_blueprint(rq_dashboard.blueprint)
+application.config['REDIS_HOST'] = donk_conf.REDIS_HOST
+application.config['REDIS_PORT'] = donk_conf.REDIS_PORT
 application.config['APPLICATION_ROOT'] = donk_conf.web_prefix
+application.register_blueprint(rq_dashboard.blueprint)
+
+
 V3View.register(application)
 
 

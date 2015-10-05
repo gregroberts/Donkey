@@ -13,22 +13,23 @@ import config as donk_conf
 import json, time
 
 testing = False
-mysql_conn= madb.connect(host=donk_conf.MySQL_host,
-				    user=donk_conf.MySQL_user,
-				    passwd=donk_conf.MySQL_passwd,
-				    port=donk_conf.MySQL_port,
-				    db=donk_conf.MySQL_db)
 redis_conn = Redis(host = donk_conf.REDIS_HOST,
 			 port = donk_conf.REDIS_PORT)
 
 
 
-def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsource = 'sql', limit = 0):
+def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsource = 'sql', limit = 0, mysql_conn = None):
 	'''This guy does what it says on the tin. 
 	creates a list of jobs for rq, and adds them to the specified queue
 	returns set of jobs, if you want to check on them
 	'''
 	#set async = false for testing
+	if mysql_conn is None:
+		mysql_conn= madb.connect(host=donk_conf.MySQL_host,
+				    user=donk_conf.MySQL_user,
+				    passwd=donk_conf.MySQL_passwd,
+				    port=donk_conf.MySQL_port,
+				    db=donk_conf.MySQL_db)
 	q = Queue(queue_name, connection = redis_conn, async= not testing)
 	archetype = archetype.replace('"','\\\"')
 	db_cursor = mysql_conn.cursor(cursorclass = DictCursor)
@@ -62,14 +63,25 @@ def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsou
 		q.enqueue(finish, collector_name, len(results))
 	return job_rets
 
-def scheduler():
+def scheduler(which = None, mysql_conn=None):
 	'''schedules all the collections which need doing'''
+	if mysql_conn is None:
+		mysql_conn= madb.connect(host=donk_conf.MySQL_host,
+				    user=donk_conf.MySQL_user,
+				    passwd=donk_conf.MySQL_passwd,
+				    port=donk_conf.MySQL_port,
+				    db=donk_conf.MySQL_db)
 	cursor = mysql_conn.cursor(cursorclass = DictCursor)
-	cursor.execute('''SELECT * FROM Collections
-				 WHERE DATE_ADD(LastScheduled,INTERVAL Frequency DAY) < curdate()
-				 and InProgress = 0
-				 ''')
-	jobs = cursor.fetchall()
+	if which is None:
+		cursor.execute('''SELECT * FROM Collections
+					 WHERE DATE_ADD(LastScheduled,INTERVAL Frequency DAY) < curdate()
+					 and InProgress = 0
+					 ''')
+	else:
+		cursor.execute('''SELECT * from Collections
+			where CollectorName in (%s)
+			''' % ','.join(map(lambda x: '"%s"' % x, which)))
+	jobs = cursor.fetchall()	
 	for i in jobs:
 		collector_name = '%s-%d' % (i['CollectorName'] , time.time())
 		schedule(redis_conn,
