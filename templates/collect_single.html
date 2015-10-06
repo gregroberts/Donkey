@@ -307,6 +307,7 @@ The result of your collection will show up here.
 				url:"{{prefix}}/v3/collection/",
 				data: JSON.stringify(query),
 				success: function(data) {
+					console.log(data);
 					insertRes(data.response, data.success);
 				},
 				dataType:"json"
