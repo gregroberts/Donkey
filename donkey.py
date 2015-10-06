@@ -159,6 +159,13 @@ class Donkey:
 		collections = c.fetchall()
 		return collections
 
+	def check_collector_log(self, name):
+		c = self.mysql_conn.cursor(cursorclass = DictCursor)
+		c.execute('''SELECT * from Collections_Log
+			WHERE CollectorName = \'%s\'
+			''' % name)
+		return c.fetchall()
+
 
 if __name__ == '__main__':
 	test2 = {

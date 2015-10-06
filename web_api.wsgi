@@ -122,6 +122,13 @@ class V3View(FlaskView):
 						n = len(collectors),
 						collectors = collectors)
 
+	def collector_log(self, name):
+		rows = self.d.check_collector_log(name)
+		return render_template('collector_log.html',
+						prefix = donk_conf.web_prefix,
+						rows = rows,
+						name = name
+						)
 
 
 	@route('/collection/', methods = ['POST'])

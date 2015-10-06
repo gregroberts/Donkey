@@ -26,6 +26,7 @@
 						<th>Date Last Scheduled</th>
 						<th>In Progress</th>
 						<th>Reschedule Now</th>
+						<th>View Logs</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -77,6 +78,9 @@
 									<button class="btn btn-default" type="button" thing="{{x.CollectorName}}" do="x" ><span class="glyphicon glyphicon-repeat"></span></button>							
 								{% endif %}
 								
+							</td>
+							<td>
+								<a href="{{prefix}}/v3/collector_log/{{x.CollectorName}}"><span class="glyphicon glyphicon-menu-hamburger"></span></a>
 							</td>
 						</tr>
 
