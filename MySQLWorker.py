@@ -46,11 +46,6 @@ class MySQLWorker(Worker):
 			if isinstance(job_class, string_types):
 				job_class = import_attribute(job_class)
 			self.job_class = job_class
-		self.mysql_conn= madb.connect(host=donk_conf.MySQL_host,
-								user=donk_conf.MySQL_user,
-								passwd=donk_conf.MySQL_passwd,
-								port=donk_conf.MySQL_port,
-								db=donk_conf.MySQL_db)
 		self.interval = interval
 
 	def perform_job(self, job):
@@ -60,9 +55,14 @@ class MySQLWorker(Worker):
 		#make sure we dont do more than one job per interval
 		print 'Sleeping for %d seconds' % self.interval
 		time.sleep(self.interval)
+		mysql_conn= madb.connect(host=donk_conf.MySQL_host,
+								user=donk_conf.MySQL_user,
+								passwd=donk_conf.MySQL_passwd,
+								port=donk_conf.MySQL_port,
+								db=donk_conf.MySQL_db)
 		self.prepare_job_execution(job)
 		#this is the key thing, prodvides a db_conn for functions to use
-		job.kwargs['db_conn'] = self.mysql_conn
+		job.kwargs['db_conn'] = mysql_conn
 		with self.connection._pipeline() as pipeline:
 			started_job_registry = StartedJobRegistry(job.origin, self.connection)
 			try:
@@ -74,7 +74,6 @@ class MySQLWorker(Worker):
 				job._result = rv
 
 				self.set_current_job_id(None, pipeline=pipeline)
-
 				result_ttl = job.get_result_ttl(self.default_result_ttl)
 				if result_ttl != 0:
 					job.ended_at = utcnow()
@@ -86,9 +85,7 @@ class MySQLWorker(Worker):
 
 				job.cleanup(result_ttl, pipeline=pipeline)
 				started_job_registry.remove(job, pipeline=pipeline)
-
 				pipeline.execute()
-
 			except Exception:
 				job.set_status(JobStatus.FAILED, pipeline=pipeline)
 				started_job_registry.remove(job, pipeline=pipeline)
