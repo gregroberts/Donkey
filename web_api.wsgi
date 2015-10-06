@@ -148,6 +148,7 @@ class V3View(FlaskView):
 		except:
 			success = False
 			result = format_exc().split('\n')
+		#print result
 		return response(success, result)
 
 

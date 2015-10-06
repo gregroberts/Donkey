@@ -18,21 +18,21 @@ redis_conn = Redis(host = donk_conf.REDIS_HOST,
 
 
 
-def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsource = 'sql', limit = 0, mysql_conn = None):
+def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsource = 'sql', limit = 0, db_conn = None):
 	'''This guy does what it says on the tin. 
 	creates a list of jobs for rq, and adds them to the specified queue
 	returns set of jobs, if you want to check on them
 	'''
 	#set async = false for testing
-	if mysql_conn is None:
-		mysql_conn= madb.connect(host=donk_conf.MySQL_host,
+	if db_conn is None:
+		db_conn= madb.connect(host=donk_conf.MySQL_host,
 				    user=donk_conf.MySQL_user,
 				    passwd=donk_conf.MySQL_passwd,
 				    port=donk_conf.MySQL_port,
 				    db=donk_conf.MySQL_db)
 	q = Queue(queue_name, connection = redis_conn, async= not testing)
 	archetype = archetype.replace('"','\\\"')
-	db_cursor = mysql_conn.cursor(cursorclass = DictCursor)
+	db_cursor = db_conn.cursor(cursorclass = DictCursor)
 	if inputsource == 'sql':
 		db_cursor.execute(_input)
 		results = db_cursor.fetchall()
@@ -48,7 +48,7 @@ def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsou
 			(CollectorName, JobName, TimeStarted,Jobs)
 			VALUES ('%s','%s',NOW(),%d)
 		''' % (collector_name.split('-')[0], collector_name, len(results)))
-	mysql_conn.commit()
+	db_conn.commit()
 	for index, row in enumerate(results):
 		job_name = '%s-%d' % (collector_name, index)
 		job = copy(archetype)
@@ -57,21 +57,20 @@ def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsou
 		job = json.loads(job.decode('string-escape'))
 		res = q.enqueue(collection, job,collector_name, job_id= job_name)
 		job_rets.append(res)
+	print finish, collector_name, len(results)
 	#finally, add a job which finishes the collection
-	if collector_name[0] != '@':
-		#if name starts with @, tis a RT_collection
-		q.enqueue(finish, collector_name, len(results))
+	q.enqueue(finish, collector_name, len(results))
 	return job_rets
 
-def scheduler(which = None, mysql_conn=None):
+def scheduler(which = None, db_conn=None):
 	'''schedules all the collections which need doing'''
-	if mysql_conn is None:
-		mysql_conn= madb.connect(host=donk_conf.MySQL_host,
+	if db_conn is None:
+		db_conn= madb.connect(host=donk_conf.MySQL_host,
 				    user=donk_conf.MySQL_user,
 				    passwd=donk_conf.MySQL_passwd,
 				    port=donk_conf.MySQL_port,
 				    db=donk_conf.MySQL_db)
-	cursor = mysql_conn.cursor(cursorclass = DictCursor)
+	cursor = db_conn.cursor(cursorclass = DictCursor)
 	if which is None:
 		cursor.execute('''SELECT * FROM Collections
 					 WHERE DATE_ADD(LastScheduled,INTERVAL Frequency DAY) < curdate()
@@ -95,7 +94,7 @@ def scheduler(which = None, mysql_conn=None):
 					SET LastScheduled = curdate() ,
 						InProgress = 1
 					WHERE CollectorName = \'%s\' ''' % i['CollectorName'])
-		mysql_conn.commit()
+		db_conn.commit()
 
 
 if __name__ == '__main__':

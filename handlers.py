@@ -21,7 +21,7 @@ class XPATH:
 				if isinstance(res[0], str):
 					res = [i.encode('ascii', errors = 'replace').replace('\n','') for i in res]
 			elif  isinstance(res, str) or isinstance(res, unicode):
-				res = res.encode('ascii', errors = 'replace').replace('\n','')
+				res =res.encode('ascii', errors = 'replace').replace('\n','')
 		return res
 
 class JMESPATH:

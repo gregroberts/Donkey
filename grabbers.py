@@ -43,7 +43,7 @@ def request_grabber(kwargs):
 	if mime== 'json':
 		return req.json()
 	elif mime == 'html':
-		return req.text
+		return req.text.encode('ascii',errors='ignore')#.encode('ascii',errors='replace')
 
 
 

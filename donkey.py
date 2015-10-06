@@ -118,14 +118,19 @@ class Donkey:
 		if async == False:
 			res = []
 			for i in results: 
-				while i.status =='queued':
+				while i.status =='queued' or i.status =='started':
 					pass
+				print i.status
 				if i.status == 'failed':
 					print i.exc_info
-				if type(i.result) == list:
-					res.extend(i.result)
+					res.append(i.exc_info)
+				elif i.status == 'finished':
+					if type(i.result) == list:
+						res.extend(i.result or ['result is None'])
+					else:
+						res.append(i.result or 'result is None')
 				else:
-					res.append(i.result)
+					res.append(i.status)
 			return res
 		return results
 

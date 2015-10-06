@@ -42,6 +42,7 @@ def do_str(_in):
 def finish(job_name,length, db_conn = None):
 	'''called once a collection has finished'''
 	collector_name = job_name.split('-')[0]
+	print 'finishing job %s' % job_name
 	redis_conn = Redis(host = donk_conf.REDIS_HOST,
 			 port = donk_conf.REDIS_PORT)
 #	print collector_name
@@ -110,6 +111,7 @@ def collect(query_args, putter_args, collector_name, db_conn=None):
 	'''does the collection, either puts the data in a table
 		or returns it in a dictarray to the caller (in case of real time collection)
 	'''
+	print putter_args
 	data = d_q(query_args)
 	if putter_args['base'] != '':
 		base = search(putter_args['base'], data)
@@ -121,6 +123,7 @@ def collect(query_args, putter_args, collector_name, db_conn=None):
 			vals = [{key: search(val, i) for key,val in putter_args['mapping'].items()} for i in base]
 		elif type(base) is dict:
 			vals = {key: search(val, base) for key,val in putter_args['mapping'].items()}
+		#print vals
 		return vals
 	else:
 		cursor = db_conn.cursor()
