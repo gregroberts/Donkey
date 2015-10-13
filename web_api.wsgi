@@ -221,7 +221,7 @@ class V3View(FlaskView):
 				args = (name, _type, type(query[name]))
 				res = {'message':'argument %s should be %s, instead, got %s' % args}
 		try:
-			msg = self.d.save(query['query'], query['parameters'], query['description'])
+			msg = self.d.save(query['query'], query['parameters'], query['name'], query['description'])
 			success = True
 		except:
 			msg = format_exc().split('\n')

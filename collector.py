@@ -111,7 +111,6 @@ def collect(query_args, putter_args, collector_name, db_conn=None):
 	'''does the collection, either puts the data in a table
 		or returns it in a dictarray to the caller (in case of real time collection)
 	'''
-	print putter_args
 	data = d_q(query_args)
 	if putter_args['base'] != '':
 		base = search(putter_args['base'], data)

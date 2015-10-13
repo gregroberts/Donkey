@@ -10,7 +10,7 @@ class XPATH:
 		pass
 
 	def parse(self, data):
-		return etree.HTML(data.replace('&quot;',''))
+		return etree.HTML(data.replace('&quot;','').encode('ascii', errors = 'ignore'))
 
 	def query(self, obj, querystr):
 		if isinstance(obj, list):
@@ -18,10 +18,10 @@ class XPATH:
 		else:
 			res = obj.xpath(querystr)
 			if type(res) == list and len(res) > 0:
-				if isinstance(res[0], str):
-					res = [i.encode('ascii', errors = 'replace').replace('\n','') for i in res]
-			elif  isinstance(res, str) or isinstance(res, unicode):
-				res =res.encode('ascii', errors = 'replace').replace('\n','')
+				if isinstance(res[0], basestring):
+					res = [i.encode('ascii', errors = 'ignore').replace('\n','') for i in res]
+			elif  isinstance(res, basestring):
+				res =res.encode('ascii', errors = 'ignore').replace('\n','')
 		return res
 
 class JMESPATH:

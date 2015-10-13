@@ -90,7 +90,6 @@ class Donkey:
 			print filled_qry
 			result = self.query(filled_qry)
 			return result
-
 	def save(self, query, parameters, name, description):
 		'''saves the query to th library'''
 		to_save = {
@@ -122,7 +121,6 @@ class Donkey:
 					pass
 				print i.status
 				if i.status == 'failed':
-					print i.exc_info
 					res.append(i.exc_info)
 				elif i.status == 'finished':
 					if type(i.result) == list:
