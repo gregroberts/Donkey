@@ -140,7 +140,7 @@ class Donkey:
 		 LastScheduled, InputSource, Input, Archetype, CollectorDescription,InProgress)
 		VALUES ('%s','%s',%s,'1970-01-01','%s','%s','%s','%s',0)
 		''' % (req['CollectorName'],
-			 req['CollectorDescription'],
+			 req['QueueName'],
 			 req['Frequency'],
 			 req['InputSource'],
 			 req['Input'],
