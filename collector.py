@@ -96,7 +96,7 @@ def grab(data, params, collector_name):
 	'''
 	k_v = list(params['mapping'].items())
 	qry = ' INSERT INTO %s.%s \n' % (donk_conf.collector_schemaname, params['table_name'])
-	qry += '(CollectorName, Collected,%s) VALUES \n' % ','.join(map(lambda x: x[0], k_v))
+	qry += '(CollectorName, Collected,%s) VALUES \n' % ','.join(map(lambda x: '`%s`' % x[0], k_v))
 	vals = [do_str(collector_name.split('-')[0]), 'NOW()']
 	for col_name, col_loc in k_v:
 		val = search(col_loc, data)

@@ -12,7 +12,7 @@ from urlparse import parse_qs
 
 
 #FIX THIS AT SOME POINT, JEEZ
-#requests.packages.urllib3.disable_warnings()
+requests.packages.urllib3.disable_warnings()
 
 
 
