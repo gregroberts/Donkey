@@ -33,7 +33,12 @@ def crawls(qry, to_grab, to_handle):
 		raise Exception('Crawler needs a \'next\' parameter', [])
 	rule = to_crawl.pop('rule','`true`')
 	#if no rule and no max, errrorrrrrr
-	maxiter = to_crawl.pop('max',10)
+	try:
+		maxiter = int(to_crawl.pop('max',10))
+	except:
+		raise Exception('max crawl val must be an integer!')
+	print maxiter
+	print type(maxiter)
 	crawl_kwargs = to_crawl
 	raw_response = request(to_grab)
 	res = handles(raw_response, to_handle)

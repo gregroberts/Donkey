@@ -73,6 +73,7 @@ def check_cache(key, freshness = 30):
 	return ret
 
 def request(req):
+	print req
 	freshness = req.pop('@freshness', 30)
 	resp = check_cache(req,freshness)
 	return resp
