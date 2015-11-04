@@ -73,7 +73,7 @@ def scheduler(which = None, db_conn=None):
 	cursor = db_conn.cursor(cursorclass = DictCursor)
 	if which is None:
 		cursor.execute('''SELECT * FROM Collections
-					 WHERE DATE_ADD(LastScheduled,INTERVAL Frequency DAY) < curdate()
+					 WHERE DATE_ADD(LastScheduled,INTERVAL Frequency DAY) <= curdate()
 					 and InProgress = 0
 					 ''')
 	else:
