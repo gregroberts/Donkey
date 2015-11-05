@@ -37,8 +37,6 @@ def crawls(qry, to_grab, to_handle):
 		maxiter = int(to_crawl.pop('max',10))
 	except:
 		raise Exception('max crawl val must be an integer!')
-	print maxiter
-	print type(maxiter)
 	crawl_kwargs = to_crawl
 	raw_response = request(to_grab)
 	res = handles(raw_response, to_handle)
