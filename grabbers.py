@@ -141,7 +141,7 @@ def get_user_agents():
 			user_agents = json.load(f)
 	except:
 		reg = requests.get('http://www.zytrax.com/tech/web/browser_ids.htm')
-		user_agents = handles(gg.text,{'tt':'//p[@class=\'g-c-s\']/text()'})['tt']
+		user_agents = handles(reg.text,{'tt':'//p[@class=\'g-c-s\']/text()'})['tt']
 		with open(f_n,'wb') as f:
 			json.dump(user_agents,f)
 	return user_agents	
@@ -155,13 +155,13 @@ def evil_request_grabber(kwargs):
 	'''
 	#have to make a copy because kwargs persists
 	k2 = copy(kwargs)
-	time.sleep(random.randint(0,4))
+	time.sleep(random.randint(0,10))
 	mime = k2.pop('mime','html')
 	url = k2.pop('url')	
 	domain = k2.pop('domain',None)
 	user_agents = get_user_agents()
 	headers = k2.pop('headers',{})
-	headers.update({'user-agent':random.choice(user_agents)})
+	headers.update({'user-string':random.choice(user_agents)})
 	if type(url) == list:
 		try:
 			url =url[0]
