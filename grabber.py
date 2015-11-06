@@ -62,7 +62,7 @@ def check_cache(key, freshness = 30):
 		val = rd_conn.hgetall('cache:%s' % s_key)
 	except:
 		warnings.warn('Cannot communicate with Redis Cache!', Warning)
-	if val == {} or ((float(val['ts']) < time() - float(freshness*86400)) and freshness >0):
+	if val == {} or freshness ==0 or float(val['ts']) < time() - float(freshness*86400):
 		#couldn't find it, or not fresh, so make it!
 		try:
 			ret = execute(key)
