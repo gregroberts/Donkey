@@ -56,6 +56,7 @@ def execute(key):
 def check_cache(key, freshness = 30):
 	'''takes a request for data, serialises it,
 		then checks if that key exists in the cache'''
+	freshness = int(freshness)
 	s_key = mk_key(key)
 	try:
 		val = rd_conn.hgetall('cache:%s' % s_key)
@@ -67,9 +68,9 @@ def check_cache(key, freshness = 30):
 			ret = execute(key)
 		except Exception as err:
 			raise Exception(['grabber failed with traceback:',format_exc()])
-		cache_insert(s_key, ret)
 	else:
 		ret = comp(val['val'],True)
+	cache_insert(s_key, ret)	
 	return ret
 
 def request(req):
