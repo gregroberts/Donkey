@@ -142,12 +142,12 @@ def get_user_agents():
 	except:
 		reg = requests.get('http://www.zytrax.com/tech/web/browser_ids.htm')
 		user_agents = handles(reg.text,{'tt':'//p[@class=\'g-c-s\']/text()'})['tt']
-		with open(f_n,'wb') as f:
-			json.dump(user_agents,f)
-	finally:
-		reg = requests.get('http://www.zytrax.com/tech/web/browser_ids.htm')
-		user_agents = handles(reg.text,{'tt':'//p[@class=\'g-c-s\']/text()'})['tt']		
-	return user_agents	
+		try:
+			with open(f_n,'wb') as f:
+				json.dump(user_agents,f)
+		except:
+			pass
+	return user_agents
 
 
 import random
