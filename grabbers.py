@@ -11,8 +11,11 @@ from httplib2 import Http
 from urlparse import parse_qs
 
 
-#FIX THIS AT SOME POINT, JEEZ
-requests.packages.urllib3.disable_warnings()
+try:
+	#FIX THIS AT SOME POINT, JEEZ
+	requests.packages.urllib3.disable_warnings()
+except:
+	pass
 
 
 
