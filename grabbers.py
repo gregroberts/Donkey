@@ -130,9 +130,54 @@ def google_analytics_grabber(kwargs):
 	return response
 
 
+def get_user_agents():
+	from querier import handles
+	f_n = 'user_agents.json'
+	try:
+		with open(f_n,'rb') as f:
+			user_agents = json.load(f)
+	except:
+		reg = requests.get('http://www.zytrax.com/tech/web/browser_ids.htm')
+		user_agents = handles(gg.text,{'tt':'//p[@class=\'g-c-s\']/text()'})['tt']
+		with open(f_n,'wb') as f:
+			json.dump(user_agents,f)
+	return user_agents	
+
+
+import random
+import time
+def evil_request_grabber(kwargs):
+	'''only slightly evil. 
+	spoofs user agents from a very large list
+	'''
+	#have to make a copy because kwargs persists
+	k2 = copy(kwargs)
+	time.sleep(random.randint(0,4))
+	mime = k2.pop('mime','html')
+	url = k2.pop('url')	
+	domain = k2.pop('domain',None)
+	user_agents = get_user_agents()
+	headers = k2.pop('headers',{})
+	headers.update({'user-agent':random.choice(user_agents)})
+	if type(url) == list:
+		try:
+			url =url[0]
+		except:
+			raise Exception('Requests error, you gave me an empty list!?')	
+	if domain is not None:
+		url = urljoin(domain, url)
+	req = requests.request(k2.pop('method','get'),url,headers=headers,**k2)
+	#TODO - Add Exception handler for requests module
+	if mime== 'json':
+		return req.json()
+	elif mime == 'html':
+		return req.text.encode('ascii',errors='ignore')
+
+
+
 
 
 
 if __name__ == '__main__':
-	print twitter({'route':'search/tweets.json',
+	print twitter_grabber({'route':'search/tweets.json',
 			'q':'greg'})

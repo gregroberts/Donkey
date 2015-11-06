@@ -24,3 +24,4 @@ pip-log.txt
 .tox
 
 config.py
+user_agents.json
