@@ -1,6 +1,6 @@
 from rq.worker import *
 import time, sys
-import MySQLdb as madb
+import db_conn
 import config as donk_conf
 #Here we try to implement a custom worker class which adds a persistent database connection acros jobs.
 #this connection is passed to each job in the kwarg db_conn
@@ -55,7 +55,7 @@ class MySQLWorker(Worker):
 		#make sure we dont do more than one job per interval
 		print 'Sleeping for %d seconds' % self.interval
 		time.sleep(self.interval)
-		mysql_conn= madb.connect(**donk_conf.SQL_CONF)
+		mysql_conn= db_conn.DB()
 		self.prepare_job_execution(job)
 		#this is the key thing, prodvides a db_conn for functions to use
 		job.kwargs['db_conn'] = mysql_conn

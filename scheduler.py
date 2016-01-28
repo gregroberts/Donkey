@@ -8,7 +8,7 @@ from copy import copy
 from rq import Queue
 from redis import Redis
 from collector import collection, finish
-import MySQLdb as madb
+from db_conn import DB
 import config as donk_conf
 import json, time
 
@@ -24,13 +24,11 @@ def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsou
 	'''
 	#set async = false for testing
 	if db_conn is None:
-		db_conn= madb.connect(**donk_conf.SQL_CONF)
+		db_conn= DB()
 	q = Queue(queue_name, connection = redis_conn, async= not testing)
 	archetype = archetype.replace('"','\\\"')
-	db_cursor = db_conn.cursor(cursorclass = DictCursor)
 	if inputsource == 'sql':
-		db_cursor.execute(_input)
-		results = db_cursor.fetchall()
+		results = db_conn.query(_input, cursorclass = DictCursor)
 	elif inputsource == 'json':
 		if isinstance(_input, basestring):
 			results = json.loads(_input)
@@ -39,11 +37,10 @@ def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsou
 	job_rets = []
 	if limit != 0:
 		results = results[:limit]
-	db_cursor.execute('''INSERT INTO Collections_Log
+	db_conn.query('''INSERT INTO Collections_Log
 			(CollectorName, JobName, TimeStarted,Jobs)
 			VALUES ('%s','%s',NOW(),%d)
 		''' % (collector_name.split('-')[0], collector_name, len(results)))
-	db_conn.commit()
 	for index, row in enumerate(results):
 		job_name = '%s-%d' % (collector_name, index)
 		job = copy(archetype)
@@ -60,22 +57,44 @@ def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsou
 def scheduler(which = None, db_conn=None):
 	'''schedules all the collections which need doing'''
 	if db_conn is None:
-		db_conn= madb.connect(host=donk_conf.MySQL_host,
-				    user=donk_conf.MySQL_user,
-				    passwd=donk_conf.MySQL_passwd,
-				    port=donk_conf.MySQL_port,
-				    db=donk_conf.MySQL_db)
-	cursor = db_conn.cursor(cursorclass = DictCursor)
+		db_conn= DB()
+	db_conn.query('''
+		CREATE TABLE IF NOT EXISTS Collections (
+			id INT(3) AUTO_INCREMENT ,
+			CollectorName VARCHAR(45),
+			QueueName VARCHAR(40),
+			Frequency INT(5),
+	 		LastScheduled DATETIME DEFAULT '1970-01-01',
+	 		InputSource VARCHAR(10),
+	 		Input VARCHAR(900), 
+	 		Archetype VARCHAR(999),
+	 		CollectorDescription VARCHAR(999),
+	 		InProgress INT(2) DEFAULT 0,
+	 		PRIMARY KEY (id)
+	 	)
+		''')
+	db_conn.query('''
+		CREATE TABLE IF NOT EXISTS Collections_Log (
+			id INT(10) AUTO_INCREMENT,
+			CollectorName VARCHAR(50),
+			JobName VARCHAR(50),
+			TimeStarted DATETIME,
+			Jobs INT(10),
+			Failures INT(10),
+			ExceptionStrings VARCHAR(50),
+			PRIMARY KEY (id)
+		)''')
 	if which is None:
-		cursor.execute('''SELECT * FROM Collections
+		jobs = db_conn.query('''SELECT * FROM Collections
 					 WHERE DATE_ADD(LastScheduled,INTERVAL Frequency DAY) <= curdate()
 					 and InProgress = 0
-					 ''')
+					 ''',
+					 cursorclass = DictCursor)
 	else:
-		cursor.execute('''SELECT * from Collections
+		jobs = db_conn.query('''SELECT * from Collections
 			where CollectorName in (%s)
-			''' % ','.join(map(lambda x: '"%s"' % x, which)))
-	jobs = cursor.fetchall()	
+			''' % ','.join(map(lambda x: '"%s"' % x, which)),
+			cursorclass = DictCursor)	
 	for i in jobs:
 		collector_name = '%s-%d' % (i['CollectorName'] , time.time())
 		schedule(redis_conn,
@@ -85,11 +104,10 @@ def scheduler(which = None, db_conn=None):
 			   collector_name,
 			   i['InputSource']
 			)
-		cursor.execute('''UPDATE Collections 
+		db_conn.query('''UPDATE Collections 
 					SET LastScheduled = curdate() ,
 						InProgress = 1
 					WHERE CollectorName = \'%s\' ''' % i['CollectorName'])
-		db_conn.commit()
 
 
 if __name__ == '__main__':

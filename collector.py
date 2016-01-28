@@ -15,18 +15,21 @@
 #	-db_action (e.g. replace,insert) update not supported yet!
 #
 # also takes: 
-#	-db connection
+#	-db connection, where db_conn is db_conn.DB instance
 #
 
 from querier import query as d_q
+from db_conn import DB
 from jmespath import search
 from re import findall
 from dateutil import parser
 from MySQLdb import escape_string
+from MySQLdb.cursors import DictCursor
 from config import collector_schemaname
 from rq import Queue
 from redis import Redis
 import config as donk_conf
+import json
 
 def do_str(_in):
 	'''deals with stringlike things'''
@@ -41,13 +44,13 @@ def do_str(_in):
 
 def finish(job_name,length, db_conn = None):
 	'''called once a collection has finished'''
+	if db_conn == None:
+		db_conn = DB()
 	collector_name = job_name.split('-')[0]
 	print 'finishing job %s' % job_name
 	redis_conn = Redis(host = donk_conf.REDIS_HOST,
 			 		   port = donk_conf.REDIS_PORT)
-	db_cursor = db_conn.cursor()
-	db_cursor.execute('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % collector_name)
-	db_conn.commit()
+	db_conn.query('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % collector_name)
 	failed = Queue('failed', connection = redis_conn, async=False)
 	failed_jobs = filter(lambda x: job_name in x.id, failed.jobs)
 	failed_reasons = ',\n'.join(i.exc_info for i in failed_jobs)
@@ -62,11 +65,10 @@ def finish(job_name,length, db_conn = None):
 		 failed_reasons,
 		 job_name,
 		 collector_name)
-	db_cursor.execute(statement)
-	db_conn.commit()
+	db_conn.query(statement)
 
 
-def mk_table(putter_args, db_cursor):
+def mk_table(putter_args, db_conn):
 	table_name = putter_args['table_name']
 	columns = putter_args['mapping'].keys()
 	col_stmnt = ',\n'.join(map(lambda x: '`%s` TEXT(500)' % x,columns))
@@ -80,14 +82,13 @@ def mk_table(putter_args, db_cursor):
 	) ENGINE=InnoDB AUTO_INCREMENT=168 DEFAULT CHARSET=latin1;
 	''' % ( table_name, col_stmnt)
 	try:
-		db_cursor.execute(statement)
+		db_conn.query(statement)
 	except Exception as e:
 		raise(Exception('%s - %s' % (e,statement)))
 
 
 def grab(data, params, collector_name):
-	'''constructs a single SQL query from a single object
-	'''
+	'''constructs a single SQL query from a single object'''
 	k_v = list(params['mapping'].items())
 	qry = ' INSERT INTO %s \n' % (params['table_name'])
 	qry += '(CollectorName, Collected,%s) VALUES \n' % ','.join(map(lambda x: '`%s`' % x[0], k_v))
@@ -105,6 +106,8 @@ def collect(query_args, putter_args, collector_name, db_conn=None):
 	'''does the collection, either puts the data in a table
 		or returns it in a dictarray to the caller (in case of real time collection)
 	'''
+	if db_conn == None:
+		db_conn = DB()
 	data = d_q(query_args)
 	if putter_args['base'] != '':
 		base = search(putter_args['base'], data)
@@ -119,9 +122,7 @@ def collect(query_args, putter_args, collector_name, db_conn=None):
 		#print vals
 		return vals
 	else:
-		cursor = db_conn.cursor()
-		mk_table(putter_args, cursor)
-		db_conn.commit()
+		mk_table(putter_args, db_conn)
 		queries = []
 		if type(base) is list:
 			for i in base:
@@ -132,8 +133,8 @@ def collect(query_args, putter_args, collector_name, db_conn=None):
 		else:
 			raise Exception('Data Structure \'%s\' not recognised!' % type(base))
 		for qry in queries:
-			cursor.execute(qry)
-		db_conn.commit()
+			db_conn.query(qry)
+
 
 def collection(args,collector_name, db_conn=None):
 	'''runs a collection and returns the result
@@ -143,65 +144,37 @@ def collection(args,collector_name, db_conn=None):
 	return collect(query_args,putter_args,collector_name, db_conn)
 
 
+def setup_collector(req, db_conn = None):
+	if db_conn == None:
+		db_conn = DB()
+	statement = '''
+	INSERT INTO Collections
+	(CollectorName, QueueName, Frequency,
+	 LastScheduled, InputSource, Input, Archetype, CollectorDescription,InProgress)
+	VALUES ('%s','%s',%s,'1970-01-01','%s','%s','%s','%s',0)
+	''' % (req['CollectorName'],
+		 req['QueueName'],
+		 req['Frequency'],
+		 req['InputSource'],
+		 req['Input'],
+		 json.dumps(req['Archetype']).encode('string-escape'),
+		 req['CollectorDescription'].replace('\'',''))
+	print statement
+	db_conn.query(statement)
+	return 'done'
 
-if __name__ == '__main__':
-	#test regular collection
-#	qry = {
-#		'query':{
-#			'request':{
-#				'@grabber':'request',
-#				'url':'http://www.amazon.com/product-reviews/1782160000'
-#			},
-#			'handle':{
-#				'reviews':{
-#					'@base':'//div[@class=\'a-section review\']',
-#					'text':'.//a[contains(@class,\'review-title\')]/text()',
-#					'date':'.//span[contains(@class,\'review-date\')]/text()',
-#					'empty':'.//span[@class=\'nonexistent\']/text()',
-#					'num':'.//span[contains(@class,\'alt\')]/text()'
-#				}
-#
-#			}
-#		},
-#		'putter':{
-#			'table_name':'test',
-#			'base':'reviews',
-#			'mapping':{
-#				'testcol':'num[0]',
-#				'testcol1':'empty[0]',
-#				'testcol2':'date[0]'
-#			}
-#		}
-#	}
-#	collection(qry, db.keyconn)
-#	print d_q(qry['query'])#.encode('utf8',errors='replace')
-	#test return collection
-	qry = {
-		'query':{
-			'request':{
-				'@grabber':'request',
-				'url':'http://www.amazon.com/product-reviews/1782160000'
-			},
-			'handle':{
-				'reviews':{
-					'@base':'//div[@class=\'a-section review\']',
-					'text':'.//a[contains(@class,\'review-title\')]/text()',
-					'date':'.//span[contains(@class,\'review-date\')]/text()',
-					'empty':'.//span[@class=\'nonexistent\']/text()',
-					'num':'.//span[contains(@class,\'alt\')]/text()'
-				}
+def list_collectors(db_conn = None):
+	if db_conn == None:
+		db_conn = DB()
+	collections = db_conn.query('SELECT * from Collections', cursorclass = DictCursor)
+	return collections
 
-			}
-		},
-		'putter':{
-			'table_name':'@return',
-			'base':'reviews',
-			'mapping':{
-				'testcol':'num[0]',
-				'testcol1':'empty[0]',
-				'testcol2':'date[0]'
-			}
-		}
-	}
-	print collection(qry, db.keyconn)
+def check_collector_log(name, db_conn = None):
+	if db_conn == None:
+		db_conn = DB()
+	res = db_conn.query('''SELECT * from Collections_Log
+		WHERE CollectorName = \'%s\'
+		''' % name, cursorclass = DictCursor)
+	return res
+
 

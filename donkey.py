@@ -1,11 +1,12 @@
 import config as donk_conf
 from redis import Redis
 from querier import query as donk_query
-from db_conn import get_dbconn
+from db_conn import DB
 import time, grabber, re, json
 from datetime import datetime
 import MySQLdb as madb
 from scheduler import schedule, scheduler
+import collector
 from MySQLdb.cursors import DictCursor
 
 
@@ -20,8 +21,7 @@ def fill(query, params):
 
 class Donkey:
 	rd_conn = Redis(**donk_conf.REDIS_CONF)
-
-	mysql_conn= get_dbconn()
+	mysql_conn= DB()
 
 	def query(self, query):
 		return donk_query(query)
@@ -78,6 +78,7 @@ class Donkey:
 			print filled_qry
 			result = self.query(filled_qry)
 			return result
+
 	def save(self, query, parameters, name, description):
 		'''saves the query to th library'''
 		to_save = {
@@ -101,7 +102,13 @@ class Donkey:
 		}
 		job = json.dumps(job)
 		t_s = time.time()
-		results = schedule(self.rd_conn,_input,job,queue_name, '@OneOff-%d' % t_s, inputsource, limit, self.mysql_conn)
+		results = schedule(self.rd_conn,
+							_input,
+							job,
+							queue_name, 
+							'@OneOff-%d' % t_s,
+							inputsource,
+							limit)
 		if async == False:
 			res = []
 			for i in results: 
@@ -121,41 +128,18 @@ class Donkey:
 		return results
 
 	def setup_collector(self, req):
-		c = self.mysql_conn.cursor()
-		statement = '''
-		INSERT INTO Collections
-		(CollectorName, QueueName, Frequency,
-		 LastScheduled, InputSource, Input, Archetype, CollectorDescription,InProgress)
-		VALUES ('%s','%s',%s,'1970-01-01','%s','%s','%s','%s',0)
-		''' % (req['CollectorName'],
-			 req['QueueName'],
-			 req['Frequency'],
-			 req['InputSource'],
-			 req['Input'],
-			 json.dumps(req['Archetype']).encode('string-escape'),
-			 req['CollectorDescription'].replace('\'',''))
-		print statement
-		c.execute(statement)
-		self.mysql_conn.commit()
-		return 'ddd'
+		collector.setup_collector(req)
 
 	def run_collectors(self, names):
 		'''if you want to override the normal frequency of a collector,
 			provide a list of names to do, and they will be scheduled'''
-		scheduler(names, self.mysql_conn)
+		scheduler(names)
 
 	def list_collectors(self):
-		c = self.mysql_conn.cursor(cursorclass = DictCursor)
-		c.execute('SELECT * from Collections')
-		collections = c.fetchall()
-		return collections
+		return collector.list_collectors()
 
 	def check_collector_log(self, name):
-		c = self.mysql_conn.cursor(cursorclass = DictCursor)
-		c.execute('''SELECT * from Collections_Log
-			WHERE CollectorName = \'%s\'
-			''' % name)
-		return c.fetchall()
+		return collector.check_collector_log(name)
 
 
 if __name__ == '__main__':
