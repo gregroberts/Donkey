@@ -8,8 +8,7 @@ import warnings
 from traceback import format_exc
 
 #connect to Redis, cache db stores cache
-rd_conn = Redis(host = REDIS_HOST,
-			port = REDIS_PORT)
+rd_conn = Redis(**REDIS_CONF)
 
 def comp(obj, un = False):
 	'''pickles and compresses a value to be put
@@ -79,12 +78,3 @@ def request(req):
 	resp = check_cache(req,freshness)
 	return resp
 
-
-if __name__ == '__main__':
-	qry = {
-		'@freshness': 1,
-		'@grabber':'request',
-		'url':'http://example.com',
-		'params':{'thing':1,'other_thing':2}
-	}
-	print request(qry)

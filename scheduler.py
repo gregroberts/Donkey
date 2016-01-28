@@ -13,8 +13,7 @@ import config as donk_conf
 import json, time
 
 testing = False
-redis_conn = Redis(host = donk_conf.REDIS_HOST,
-			 port = donk_conf.REDIS_PORT)
+redis_conn = Redis(**donk_conf.REDIS_CONF)
 
 
 
@@ -25,11 +24,7 @@ def schedule(redis_conn, _input, archetype, queue_name, collector_name, inputsou
 	'''
 	#set async = false for testing
 	if db_conn is None:
-		db_conn= madb.connect(host=donk_conf.MySQL_host,
-				    user=donk_conf.MySQL_user,
-				    passwd=donk_conf.MySQL_passwd,
-				    port=donk_conf.MySQL_port,
-				    db=donk_conf.MySQL_db)
+		db_conn= madb.connect(**donk_conf.SQL_CONF)
 	q = Queue(queue_name, connection = redis_conn, async= not testing)
 	archetype = archetype.replace('"','\\\"')
 	db_cursor = db_conn.cursor(cursorclass = DictCursor)

@@ -1,0 +1,16 @@
+TODO
+
+donkey.py
+Refactor so that db connections aren't made straight away
+& config.py so that SQL database can be selected, and defaults to SQLite
+^-this is quite deep, centralise MySQL ops
+
+
+Change d.query so that args are shorter, cleaner
+
+Seperate searching the query library to another class
+
+Seperate collector admin to another task
+
+Write CrawlEra grabber
+

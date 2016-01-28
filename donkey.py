@@ -1,6 +1,7 @@
 import config as donk_conf
 from redis import Redis
 from querier import query as donk_query
+from db_conn import get_dbconn
 import time, grabber, re, json
 from datetime import datetime
 import MySQLdb as madb
@@ -17,21 +18,13 @@ def fill(query, params):
 	return qry
 
 
-
-
 class Donkey:
-	rd_conn = Redis(host = donk_conf.REDIS_HOST,
-				port = donk_conf.REDIS_PORT)
+	rd_conn = Redis(**donk_conf.REDIS_CONF)
 
-	mysql_conn= madb.connect(host=donk_conf.MySQL_host,
-					    user=donk_conf.MySQL_user,
-					    passwd=donk_conf.MySQL_passwd,
-					    port=donk_conf.MySQL_port,
-					    db=donk_conf.MySQL_db)
+	mysql_conn= get_dbconn()
+
 	def query(self, query):
 		return donk_query(query)
-
-
 
 	def search(self, name = None):
 		'''searches the query library for a given term'''
@@ -50,7 +43,7 @@ class Donkey:
 				'name': i.replace('library:',''),
 				'description': description,
 				'required parameters': params,
-				'query':  qry,
+				'query': qry,
 				'saved at': date_saved
 			}
 			results.append(res)
@@ -59,21 +52,16 @@ class Donkey:
 	def get(self, name):
 		'''returns a specified donkey query'''
 		try:
-			query = self.rd_conn.hmget('library:%s' % name, ['params','description','saved','query'])
-			params = eval(query[0] or "[]")
-			description = query[1]
-			date_saved = str(datetime.fromtimestamp(float(query[2])))
-			qry =  grabber.comp(query[3], un = True)
-			query = {
-				'name': name,
-				'description': description,
-				'required parameters': params,
-				'query':  qry,
-				'saved at': date_saved
-			}
-			return query
-		except Exception as e:
-			print e
+			res = self.search(name)
+			if len(res) == 1:
+				query = res[0]
+				return query
+			elif len(res) > 1:
+				print 'more than one query matching that name'
+				print '\n'.join(map(lambda x: x['name']))
+			else:
+				raise Exception('No queries matching name %s' % name)
+		except Exception:
 			raise e
 
 	def execute(self, name, params):

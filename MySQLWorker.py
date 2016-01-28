@@ -55,11 +55,7 @@ class MySQLWorker(Worker):
 		#make sure we dont do more than one job per interval
 		print 'Sleeping for %d seconds' % self.interval
 		time.sleep(self.interval)
-		mysql_conn= madb.connect(host=donk_conf.MySQL_host,
-								user=donk_conf.MySQL_user,
-								passwd=donk_conf.MySQL_passwd,
-								port=donk_conf.MySQL_port,
-								db=donk_conf.MySQL_db)
+		mysql_conn= madb.connect(**donk_conf.SQL_CONF)
 		self.prepare_job_execution(job)
 		#this is the key thing, prodvides a db_conn for functions to use
 		job.kwargs['db_conn'] = mysql_conn

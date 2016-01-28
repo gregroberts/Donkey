@@ -44,13 +44,7 @@ def finish(job_name,length, db_conn = None):
 	collector_name = job_name.split('-')[0]
 	print 'finishing job %s' % job_name
 	redis_conn = Redis(host = donk_conf.REDIS_HOST,
-			 port = donk_conf.REDIS_PORT)
-#	print collector_name
-#	if db_conn == None:
-#		#for debug
-#		import dbapi
-#		db = dbapi.mdb()
-#		db_conn = db.keyconn
+			 		   port = donk_conf.REDIS_PORT)
 	db_cursor = db_conn.cursor()
 	db_cursor.execute('UPDATE Collections SET InProgress=0 where CollectorName = \'%s\'' % collector_name)
 	db_conn.commit()
@@ -76,7 +70,7 @@ def mk_table(putter_args, db_cursor):
 	table_name = putter_args['table_name']
 	columns = putter_args['mapping'].keys()
 	col_stmnt = ',\n'.join(map(lambda x: '`%s` TEXT(500)' % x,columns))
-	statement = '''CREATE TABLE IF NOT EXISTS `%s`.`%s` (
+	statement = '''CREATE TABLE IF NOT EXISTS `%s` (
 		`id` int(11) NOT NULL AUTO_INCREMENT,
 		`CollectorName` varchar(255) DEFAULT '',
 		`Collected` datetime DEFAULT 0,
@@ -84,7 +78,7 @@ def mk_table(putter_args, db_cursor):
 		%s,
 		PRIMARY KEY (`id`)
 	) ENGINE=InnoDB AUTO_INCREMENT=168 DEFAULT CHARSET=latin1;
-	''' % (donk_conf.collector_schemaname, table_name, col_stmnt)
+	''' % ( table_name, col_stmnt)
 	try:
 		db_cursor.execute(statement)
 	except Exception as e:
@@ -95,7 +89,7 @@ def grab(data, params, collector_name):
 	'''constructs a single SQL query from a single object
 	'''
 	k_v = list(params['mapping'].items())
-	qry = ' INSERT INTO %s.%s \n' % (donk_conf.collector_schemaname, params['table_name'])
+	qry = ' INSERT INTO %s \n' % (params['table_name'])
 	qry += '(CollectorName, Collected,%s) VALUES \n' % ','.join(map(lambda x: '`%s`' % x[0], k_v))
 	vals = [do_str(collector_name.split('-')[0]), 'NOW()']
 	for col_name, col_loc in k_v:
@@ -144,10 +138,6 @@ def collect(query_args, putter_args, collector_name, db_conn=None):
 def collection(args,collector_name, db_conn=None):
 	'''runs a collection and returns the result
 		(None for a SQL collection, dictarray for one off)'''
-#	if db_conn == None:
-#		import dbapi
-#		db = dbapi.mdb()
-#		db_conn = db.keyconn
 	query_args = args['query']
 	putter_args = args['putter']
 	return collect(query_args,putter_args,collector_name, db_conn)
@@ -156,9 +146,6 @@ def collection(args,collector_name, db_conn=None):
 
 if __name__ == '__main__':
 	#test regular collection
-	import dbapi
-	db = dbapi.mdb()	
-	
 #	qry = {
 #		'query':{
 #			'request':{
