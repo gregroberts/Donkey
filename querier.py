@@ -48,7 +48,6 @@ def crawls(qry, to_grab, to_handle):
 	valid = search(rule, link)
 	while valid and iters < maxiter:
 		link.update(crawl_kwargs)
-		pprint(link)
 		raw_response = request(link)
 		res = handles(raw_response, to_handle)
 		link = handles(raw_response, nextlink)
@@ -67,17 +66,17 @@ def query(qry):
 		-(how to handle)
 		-(crawl instructions)
 	most simple flow just has how to grab, then returns the result'''
-	qry = copy(qry)
-	to_handle = qry.get('handle',None)
+	query = copy(qry)
+	to_handle = query.get('handle',None)
 	try:
-		to_grab = qry['request']
+		to_grab = query['request']
 	except:
 		raise Exception('Query has no request parameters!')
-	if 'crawl' not in qry.keys():
+	if 'crawl' not in query.keys():
 		response = request(to_grab)
 		return handles(response, to_handle)
 	else:
-		return crawls(qry, to_grab, to_handle)
+		return crawls(query, to_grab, to_handle)
 
 
 
