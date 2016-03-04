@@ -181,6 +181,43 @@ def evil_request_grabber(kwargs):
 
 
 
+from requests.auth import HTTPProxyAuth
+@retry(Exception,
+		tries = 5, 
+		delay = 2,
+		backoff = 2)
+def crawlera_grabber(kwargs):
+	'''kwargs must have at least:
+		-mime
+		-method
+		-url
+	'''	
+	#have to make a copy because kwargs persists
+	k2 = copy(kwargs)
+	atts = config.crawlera
+	mime = k2.pop('mime','html')
+	url = k2.pop('url')	
+	domain = k2.pop('domain',None)
+	proxy_auth = HTTPProxyAuth(atts['apikey'], "")
+	proxies = atts['proxies']
+	if type(url) == list:
+		try:
+			url =url[0]
+		except:
+			raise Exception('Requests error, you gave me an empty list!?')	
+	if domain is not None:
+		url = urljoin(domain, url)
+	req = requests.request(k2.pop('method','get'),url,proxies=proxies,
+					auth = proxy_auth,verify = atts['certificate']
+					)
+	#TODO - Add Exception handler for requests module
+	if mime== 'json':
+		return req.json()
+	elif mime == 'html':
+		return req.text.encode('ascii',errors='ignore')
+
+
+
 
 
 
