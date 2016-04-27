@@ -11,7 +11,8 @@ def get_handler(handler):
 		and a query method'''
 	if isinstance(handler, basestring):
 		handler = import_module('handlers.%s' % handler,
-								package='.').handler()
+								package='.'
+								).handler()
 	return handler
 
 
@@ -19,6 +20,7 @@ def execute(obj, query, handler):
 	'''executes a query on a thing'''
 	handy = lambda x: handler.query(obj, x)
 	query = copy(query)
+
 	if isinstance(query, basestring) or type(query) is int:
 		result = handy(query)
 	elif type(query) is list:

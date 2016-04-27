@@ -19,7 +19,8 @@ cursor.execute('''
 cache.commit()
 
 def clear_cache(since=0):
-	cursor.execute('DELETE FROM cache where time < %d' % (since*86400))
+	cursor.execute('DELETE FROM cache where time < %d' % (time()-(since*86400)))
+	cache.commit()
 
 
 def comp(obj, un = False):
