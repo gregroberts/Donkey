@@ -1,4 +1,4 @@
-from .. import handler
+from donkey import handler
 
 def test_handler_basic():
 	obj = '''<html>

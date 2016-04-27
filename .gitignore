@@ -25,3 +25,4 @@ pip-log.txt
 
 config.py
 user_agents.json
+*.db

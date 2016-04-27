@@ -1,5 +1,5 @@
 
-from .. import grabber
+from donkey import grabber
 
 def test_grabber_basic():
 	qry = {
@@ -10,3 +10,8 @@ def test_grabber_basic():
 	}
 	gg = grabber.request(qry)
 	assert gg[:2] == '<!'
+
+
+
+if __name__ == '__main__':
+	test_grabber_basic()

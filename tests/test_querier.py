@@ -1,4 +1,4 @@
-from .. import querier
+from donkey import querier
 
 def test_querier_basic_requests_xpath():
 	test2 = {
@@ -11,7 +11,7 @@ def test_querier_basic_requests_xpath():
 	assert querier.query(test2)['title'] == ['Example Domain']
 
 
-def test_querier_advanced_twitter_jmespath_crawl():
+def notest_querier_advanced_twitter_jmespath_crawl():
 	test1 = {
 	'request':{
 		'@freshness':0,
@@ -40,7 +40,7 @@ def test_querier_advanced_twitter_jmespath_crawl():
 
 
 
-def test_querier_advanced_requests_xpath_crawl():
+def notest_querier_advanced_requests_xpath_crawl():
 	test3 = {
 		'request':{
 			'url':'http://www.amazon.com/Dancing-Cats-Creators-International-Seller/product-reviews/1452128332',		
@@ -58,4 +58,4 @@ def test_querier_advanced_requests_xpath_crawl():
 		}	
 	}
 	gg = querier.query(test3)
-	assert type(gg) is list and len(gg) > 0
+	assert type(gg) is type([]) and len(gg) > 0
