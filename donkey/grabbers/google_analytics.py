@@ -1,5 +1,5 @@
 import apiclient
-from .. import config
+from donkey import config
 
 from httplib2 import Http
 
