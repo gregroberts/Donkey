@@ -42,6 +42,9 @@ def request_grabber(kwargs):
 	if domain is not None:
 		url = urljoin(domain, url)
 	req = requests.request(k2.pop('method','get'),url,**k2)
+	if req.status_code not in [200, 404]:
+		msg = 'Request returned status code %d' % req.status_code
+		raise requests.exceptions.RequestException(msg)
 	#TODO - Add Exception handler for requests module
 	if mime== 'json':
 		return req.json()
