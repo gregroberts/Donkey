@@ -12,8 +12,8 @@ def get_handler(handler):
 	if isinstance(handler, basestring):
 		handler = import_module('handlers.%s' % handler,
 								package='.'
-								).handler()
-	return handler
+								).handler
+	return handler()
 
 
 def execute(obj, query, handler):

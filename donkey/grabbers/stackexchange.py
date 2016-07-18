@@ -1,6 +1,6 @@
 from urllib import urlencode
 import requests
-from .. import config
+from donkey import config
 
 def grabber(kwargs):
 	'''For accessing the stackexchange API
