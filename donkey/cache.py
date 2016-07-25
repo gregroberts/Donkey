@@ -71,5 +71,4 @@ def cache_check(key, freshness = 30):
 	if len(res) == 0:
 		return False
 	else:
-		print 'cache hit'
 		return comp(res[0][0], True)
