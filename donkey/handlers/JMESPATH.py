@@ -20,7 +20,6 @@ class handler:
 			return data
 
 	def query(self, obj, querystr):
-		
 		if not bool(querystr):
 			return obj
 		else:

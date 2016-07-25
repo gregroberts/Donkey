@@ -1,42 +1,17 @@
-from donkey import querier
+from donkey import query
 
 def test_querier_basic_requests_xpath():
+	q = query.Query()
 	test2 = {
 		'request':{
-			'url':'http://example.com'
+			
 		},
 		'handle':{
 			'title':'//title//text()'
 		}	}
-	assert querier.query(test2)['title'] == ['Example Domain']
+	q.fetch(url='http://example.com').handle(title='//title//text()')
+	assert q.data['title'] == ['Example Domain']
 
-
-def notest_querier_advanced_twitter_jmespath_crawl():
-	test1 = {
-	'request':{
-		'@freshness':0,
-		'@grabber':'twitter',
-		'route':'search/tweets.json',
-		'q':'greg'
-		},
-	'handle':{
-		'@handler':'JMESPATH',
-		'@base':'content.statuses[]',
-		'text':'text',
-		},
-	'crawl':{
-		'next':{
-			'route':'`search/tweets.json`',
-			'q':'`greg`',
-			'max_id':'content.statuses[-1].id',
-			'@grabber':'`twitter`',
-			'@handler':'JMESPATH'
-			},
-		'max':2
-		}
-	}
-	gg = querier.query(test1)[0].keys()
-	assert gg == ['text']
 
 
 

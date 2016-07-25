@@ -10,7 +10,7 @@ def get_handler(handler):
 		all handlers must have a parse method
 		and a query method'''
 	if isinstance(handler, basestring):
-		handler = import_module('handlers.%s' % handler,
+		handler = import_module('donkey.handlers.%s' % handler,
 								package='.'
 								).handler
 	return handler()

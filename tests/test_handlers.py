@@ -1,22 +1,16 @@
-from donkey import handlers
+from donkey import handler
 import json
 
 
 
 def test_JMESPATH_BASIC():
-	hand = handlers.JMESPATH.handler()
-	gg = {'a':'b'}
-	res = hand.parse(gg)
-	assert hand.query(res, 'a') == 'b'
-	gg2 = json.dumps(gg)
-	res = hand.parse(gg2)
-	assert hand.query(res, 'a') == 'b'
+	gg = {'a':'b', 'b':'c'}
+	assert handler.handle('JMESPATH',gg,'a') == 'b'
+	assert handler.handle('JMESPATH',gg,'b') == 'c'
 
 def test_XPATH_HANDLER_BASIC():
-	hand = handlers.XPATH.handler()
 	gg = '<html><title>YAY</title></html>'
-	res = hand.parse(gg)
-	r = hand.query(res, '//title//text()')
+	r = handler.handle('XPATH',gg, '//title//text()')
 	assert r == ['YAY']
 
 

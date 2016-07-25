@@ -8,8 +8,8 @@ from cache import cache_insert, cache_check
 def execute(grabber, kwargs):
 	'''executes the request'''
 	if isinstance(grabber, basestring):
-		how = importlib.import_module( 'grabbers.%s' % grabber, 
-										package='.'
+		how = importlib.import_module( 'donkey.grabbers.%s' % grabber, 
+										#package='.'
 										).grabber
 		val = how(kwargs)
 	else:
