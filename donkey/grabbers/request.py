@@ -24,7 +24,7 @@ def grabber(k):
 	#have to make a copy because kwargs persists
 	kwargs = copy(k)
 	mime = kwargs.pop('mime','html')
-	url = kwargs.pop('url')	
+	url = kwargs.pop('url')
 	domain = kwargs.pop('domain',None)
 	if type(url) == list:
 		try:
