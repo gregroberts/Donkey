@@ -4,13 +4,27 @@ from copy import copy
 from cache import cache_insert, cache_check
 
 
+def get_grabber(grabber):
+	#try to get it from core grabbers
+	try:
+		g = importlib.import_module(
+				'donkey.grabbers.%s' % grabber, 
+			).grabber
+		return g
+	except ImportError:
+		try:
+			g = importlib.import_module(
+					'donkey.more_grabbers.%s' % grabber, 
+				).grabber	
+			return g
+		except ImportError:
+			raise Exception('Could not find grabber %s, check if it is installed?' % grabber)
+
 
 def execute(grabber, kwargs):
 	'''executes the request'''
 	if isinstance(grabber, basestring):
-		how = importlib.import_module( 'donkey.grabbers.%s' % grabber, 
-										#package='.'
-										).grabber
+		how = get_grabber(grabber)
 		val = how(kwargs)
 	else:
 		val = grabber(kwargs)

@@ -1,0 +1,3 @@
+[submodule "donkey/more_grabbers"]
+	path = donkey/more_grabbers
+	url = https://github.com/gregroberts/more_grabbers
