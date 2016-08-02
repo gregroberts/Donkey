@@ -1,0 +1,1 @@
+{"query": {"handle": {"@handler": "XPATH", "title": "//title//text()"}, "request": {"url": "http://www.amazon.{{domain}}", "@grabber": "request", "@freshness": 0}}, "saved_at": "2016-04-27 14:59", "name": "testq", "description": "a test"}

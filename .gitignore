@@ -23,5 +23,6 @@ pip-log.txt
 .coverage
 .tox
 
-config.py
 user_agents.json
+*.db
+*.rar
