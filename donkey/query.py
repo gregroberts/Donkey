@@ -1,4 +1,4 @@
-from grabber import request
+import grabber
 from handler import handle
 from jmespath import search
 from copy import copy
@@ -20,14 +20,15 @@ class Query:
 			self.freshness = freshness
 		self.handler = handler or config.default_handler
 		self.raw_data = ''
-		self.handle_query = None
-		self.request_query = None
+		self.data = []
+		self.handle_query = {}
+		self.request_query = {}
 
 	def fetch(self,update = True, **qry):
 		kwargs = copy(qry)
 		if self.request_query == None or update:
 			self.request_query = qry
-		self.raw_data = request(self.grabber,
+		self.raw_data = grabber.request(self.grabber,
 								self.freshness,
 								kwargs)
 		return self
