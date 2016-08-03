@@ -78,7 +78,8 @@ class Query:
 		for key, val in params.items():
 			query = query.replace(val, '{{%s}}' % key)
 		self.request_query = json.loads(query)
-		return self.get_params()		
+		self.request_params = params.keys()
+		return self.get_params()
 
 	def save(self, name, description):
 		req_q = {
