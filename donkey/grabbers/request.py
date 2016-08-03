@@ -26,6 +26,11 @@ def grabber(k):
 	mime = kwargs.pop('mime','html')
 	url = kwargs.pop('url')
 	domain = kwargs.pop('domain',None)
+	#mostly to automatically fool any bugger who returns a 503 for requests with no user agent
+	if 'headers' in kwargs.keys():
+		kwargs['headers']['User-agent'] = 'Donkey'
+	else:
+		kwargs['headers'] = {'User-agent': 'Donkey'}
 	if type(url) == list:
 		try:
 			url =url[0]
