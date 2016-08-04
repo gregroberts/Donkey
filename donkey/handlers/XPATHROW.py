@@ -6,7 +6,8 @@ def clean(res):
 		return res.strip().replace('\n',' ')
 	elif isinstance(res, list):
 		if len(res)>0 and not isinstance(res[0], basestring):
-			return res
+			if any(map(lambda x: type(x)==etree._Element, res)):
+				return res
 		stuff = filter(lambda x: bool(x), map(clean, res))
 		return ','.join(stuff).strip()
 	elif isinstance(res, dict):
