@@ -34,7 +34,7 @@ class Query:
 		return self
 
 	def handle(self, update=True, **qry):
-		if self.handle_query == None:
+		if self.handle_query == None or update:
 			self.handle_query = qry
 		self.data = handle(self.handler, self.raw_data, qry)
 		return self
@@ -52,7 +52,7 @@ class Query:
 			check_rule = lambda : len(self.data)>0
 		else:
 			check_rule = lambda : search(rule, self.raw_data)
-		while iters < max_depth and check_rule(): 
+		while iters < max_depth and check_rule():
 			qry.update(self.handle(**next).data)
 			_new = self.fetch(**qry).handle(**self.handle_query).data
 			if type(_new) is list:
@@ -78,7 +78,7 @@ class Query:
 		for key, val in params.items():
 			query = query.replace(val, '{{%s}}' % key)
 		self.request_query = json.loads(query)
-		self.request_params = params.keys()
+		self.parameters = params.keys()
 		return self.get_params()
 
 	def save(self, name, description):
@@ -163,5 +163,5 @@ if __name__ == '__main__':
 	#print x.run(site='amazon')
 	#print x.get_params()
 	#print x.set_params(domain='com')
-#	
+#
 	#print x.run(site='amazon',domain='co.uk')
