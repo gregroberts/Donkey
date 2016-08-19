@@ -76,7 +76,8 @@ class Query:
 	def set_params(self, **params):
 		query = json.dumps(self.request_query)
 		for key, val in params.items():
-			query = query.replace(val, '{{%s}}' % key)
+			if val != '':
+				query = query.replace(val, '{{%s}}' % key)
 		self.request_query = json.loads(query)
 		self.parameters = params.keys()
 		return self.get_params()
