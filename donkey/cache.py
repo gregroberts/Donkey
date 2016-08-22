@@ -4,20 +4,22 @@ import sqlite3
 from cPickle import loads, dumps
 from uuid import uuid1
 from time import time
-cache = sqlite3.connect('cache.db')
-cursor = cache.cursor()
 
-cursor.execute('''
-	CREATE TABLE IF NOT EXISTS cache
-	(
-		uuid TEXT,
-		time INT,
-		request TEXT,
-		response LONGBLOB
-	)
-	 ''')
-cache.commit()
-
+def get_cursor():
+	cache = sqlite3.connect('cache.db')
+	cursor = cache.cursor()
+	cursor.execute('''
+		CREATE TABLE IF NOT EXISTS cache
+		(
+			uuid TEXT,
+			time INT,
+			request TEXT,
+			response LONGBLOB
+		)
+		 ''')
+	cache.commit()
+	return cursor
+	
 def clear_cache(since=0):
 	cursor.execute('DELETE FROM cache where time < %d' % (time()-(since*86400)))
 	cache.commit()
@@ -43,6 +45,7 @@ def cache_insert(s_key,val):
 	uuid = str(uuid1())
 	t = time()
 	c_val = comp(val)
+	cursor = get_cursor()
 	cursor.execute('''
 		INSERT INTO cache
 		VALUES
@@ -57,6 +60,7 @@ def cache_check(key, freshness = 30):
 	then checks if that key exists in the cache'''
 	c_key = dumps(key)
 	since = time() - freshness * 86400
+	cursor = get_cursor()
 	cursor.execute('''
 		SELECT response
 		FROM cache
