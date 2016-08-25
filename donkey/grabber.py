@@ -4,22 +4,23 @@ from copy import copy
 from cache import cache_insert, cache_check
 
 
-def get_grabber(grabber):
+def get_grabber(grabber,get_what='grabber'):
 	#try to get it from core grabbers
 	try:
 		g = importlib.import_module(
 				'donkey.grabbers.%s' % grabber, 
-			).grabber
-		return g
+			)
 	except ImportError:
 		try:
 			g = importlib.import_module(
 					'donkey.more_grabbers.%s' % grabber, 
-				).grabber	
-			return g
+				)
 		except ImportError:
 			raise Exception('Could not find grabber %s, check if it is installed?' % grabber)
-
+	if get_what =='grabber':
+		return g.grabber
+	elif get_what == 'info':
+		return g.info
 
 def execute(grabber, kwargs):
 	'''executes the request'''
@@ -39,6 +40,36 @@ def request(grabber, freshness, req):
 		resp = execute(grabber, req)
 		cache_insert(key, resp)
 	return resp
+
+
+def man(grabber):
+	'''produces a man page for a specific grabber
+		formatted in kinda markdown'''
+	info = get_grabber(grabber, 'info')
+	man = '''
+#{name}
+
+##{short_description}
+-------------------------------
+
+##Description
+{long_description}
+-------------------------------
+##Required Parameters
+'''
+	for i,j in info['required_parameters'].items():
+		man += '*'+i+'* - '+j + '\n'
+	man += '''-------------------------------
+##Optional Parameters
+'''
+	for i,j in info['optional_parameters'].items():
+		man += '*'+i+'* - '+j + '\n'
+	man += '''-------------------------------
+For More information, see the grabbers specified url:
+{url}'''
+	return man.format(**info)
+
+
 
 
 if __name__ == '__main__':

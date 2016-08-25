@@ -21,3 +21,22 @@ def grabber(kwargs):
 	url = 'https://api.stackexchange.com/2.2/%s?%s' % (route,args)
 	res = requests.get(url)
 	return res.json()
+
+
+
+
+info = {
+	'name':'stackexchange',
+	'short_description':'For interacting with the stackexchange api',
+	'long_description':'''For interacting with the stackexchange api.
+Wraps a requests call to the api.
+The route parameter determines the route,
+all other parameters will be put into the querystring of the request.
+''',
+	'required_parameters':{
+		'route':'the route of the API you wish to call'
+	},
+	'optional_parameters':{
+	},
+	'url':'https://api.stackexchange.com/docs'
+}
