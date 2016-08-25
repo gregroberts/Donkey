@@ -37,10 +37,10 @@ info = {
 	'name':'twitter',
 	'short_description':'''A grabber for interacting with the Twitter API.''',
 	'long_description':'''A grabber for interacting with the Twitter API.
-	Takes care of OAuth stuff, then uses that to make requests to the Twitter REST API.
-	Essentially just calls: 'https://api.twitter.com/1.1/%s?%s' % (route , params)
-	where params are all the other params you supply to the grabber.
-	The params required will depend on the route being called.''',
+Takes care of OAuth stuff, then uses that to make requests to the Twitter REST API.
+Essentially just calls: 'https://api.twitter.com/1.1/%s?%s' % (route , params)
+where params are all the other params you supply to the grabber.
+The params required will depend on the route being called.''',
 	'required_parameters':{
 		'route':'The route of the api you would  like to call'
 	},

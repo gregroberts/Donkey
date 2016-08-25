@@ -42,7 +42,7 @@ def request(grabber, freshness, req):
 	return resp
 
 
-def man(grabber):
+def get_info(grabber):
 	'''produces a man page for a specific grabber
 		formatted in kinda markdown'''
 	info = get_grabber(grabber, 'info')
@@ -68,6 +68,30 @@ def man(grabber):
 For More information, see the grabbers specified url:
 {url}'''
 	return man.format(**info)
+
+
+def man(grabber):
+	'''a shortcut for printing the info'''
+	print get_info(grabber)
+
+def list_grabbers(full=False):
+	import os
+	gp = os.sep.join(__file__.split(os.sep)[:-1]) + os.sep 
+	grabbers = map(lambda x: x.split('.')[0],
+			filter(lambda x: x[-4:]!= '.pyc' and '__init__' not in x,
+				os.listdir(gp + 'grabbers')
+				)
+			)
+	grabbers.extend(map(lambda x: x.split('.')[0],
+			filter(lambda x: x[-4:]!= '.pyc' and '__init__' not in x,
+				os.listdir(gp + 'more_grabbers')
+				)
+			))
+	grabbers = filter(lambda x: x!= '' and x != 'config' and 'dummy_' not in x, grabbers)
+	if full:
+		return {i:get_grabber(i, 'info') for i in grabbers}
+	else:
+		return grabbers
 
 
 
