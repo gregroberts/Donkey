@@ -19,3 +19,12 @@ class handler:
 			elif  isinstance(res, basestring):
 				res =res.encode('ascii', errors = 'ignore').replace('\n','')
 		return res
+
+
+
+info = {
+	'name':'xpath',
+	'short_description':'simple, turns docs into etrees, queries them with XPath',
+	'long_description':'not much else to say. Uses lxml (of course)',
+	'url':'http://lxml.de'
+}

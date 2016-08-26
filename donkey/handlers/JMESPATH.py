@@ -27,3 +27,13 @@ class handler:
 				return search(querystr, obj)
 			except:
 				raise Exception(['JMESPATH query failed with exception: ', format_exc()])
+
+
+
+info = {
+	'name':'JMESPATH handler',
+	'short_description':'for querying json objects, or python dicts or similar',
+	'long_description':'''JMESPath is awesome. Like json on steroids.
+Seriously, it allows you to do so much manipulation, even filtering, on JSON like structures.''',
+	'url':'http://jmespath.org/'
+}

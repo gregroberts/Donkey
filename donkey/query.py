@@ -83,22 +83,15 @@ class Query:
 		return self.get_params()
 
 	def save(self, name, description):
-		req_q = {
-			'request':copy(self.request_query),
-			'handle':copy(self.handle_query)
-		}
-		req_q['request'].update({
-			'@freshness':self.freshness,
-			'@grabber':self.grabber,
-		})
-		req_q['handle'].update({
-			'@handler':self.handler
-		})
 		val = {
 			'name':name,
 			'description':description,
 			'saved_at':datetime.now().strftime('%Y-%m-%d %H:%M'),
-			'query':req_q
+			'request_query':self.request_query,
+			'handle_query':self.handle_query,
+			'grabber':self.grabber,
+			'freshness':self.freshness,
+			'handler':self.handler
 		}
 		with open('%s/%s.json' % (config.query_lib, name), 'wb') as f:
 			json.dump(val, f)
@@ -110,17 +103,13 @@ class SavedQuery(Query):
 		if name != None:
 			with open('%s/%s.json' % (config.query_lib, name), 'rb') as f:
 				q= json.load(f)
-			print q['description']
-			query = q['query']
-			request = query['request']
-			handle = query['handle']
-
-		self.freshness = request.pop('@freshness',config.default_freshness)
-		self.grabber = request.pop('@grabber',config.default_grabber)
-		self.handler = handle.pop('@handler',config.default_handler)
-		self.raw_data = ''
-		self.handle_query = handle
-		self.request_query = request
+		self.name = name
+		self.description = q['description']
+		self.freshness = q['freshness']
+		self.grabber = q['grabber']
+		self.handler = q['handler']
+		self.handle_query = q['handle_query']
+		self.request_query = q['request_query']
 
 
 

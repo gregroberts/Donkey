@@ -5,15 +5,18 @@
 from importlib import import_module
 from copy import copy
 
-def get_handler(handler):
+def get_handler(handler, get_what = 'handler'):
 	'''gets the handler you asked for
 		all handlers must have a parse method
 		and a query method'''
 	if isinstance(handler, basestring):
 		handler = import_module('donkey.handlers.%s' % handler,
 								package='.'
-								).handler
-	return handler()
+								)
+	if get_what == 'handler':
+		return handler.handler()
+	elif get_what == 'info':
+		return handler.info
 
 
 def execute(obj, query, handler):
@@ -50,7 +53,48 @@ def handle(handler, base, query):
 	return result
 
 
+def list_handlers(full=False):
+	import os
+	gp = os.sep.join(__file__.split(os.sep)[:-1]) + os.sep 
+	handlers = map(lambda x: x.split('.')[0],
+			filter(lambda x: x[-4:]!= '.pyc' and '__init__' not in x,
+				os.listdir(gp + 'handlers')
+				)
+			)
+	handlers = filter(lambda x: x!= '' and x != 'config' and 'dummy_' not in x, handlers)
+	if full:
+		return {i:get_handler(i, 'info') for i in handlers}
+	else:
+		return handlers
 
+
+
+
+def get_info(handler):
+	'''produces a man page for a specific handler
+		formatted in kinda markdown'''
+	info = get_handler(handler, 'info')
+	man = '''
+# {name}
+
+## {short_description}
+-------------------------------
+
+## Description
+{long_description}
+-------------------------------
+For More information, see the grabbers specified url:
+{url}'''
+	return man.format(**info)
+
+
+
+def man(handler):
+	'''a shortcut for printing the info'''
+	print get_info(handler)
+
+
+	
 if __name__ == '__main__':
 	obj = '''<html>
 		<head>
