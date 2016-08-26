@@ -47,23 +47,25 @@ def get_info(grabber):
 		formatted in kinda markdown'''
 	info = get_grabber(grabber, 'info')
 	man = '''
-#{name}
+# {name}
 
-##{short_description}
+## {short_description}
 -------------------------------
 
-##Description
+## Description
 {long_description}
 -------------------------------
-##Required Parameters
+## Required Parameters
+
 '''
 	for i,j in info['required_parameters'].items():
-		man += '*'+i+'* - '+j + '\n'
-	man += '''-------------------------------
-##Optional Parameters
+		man += '**'+i+'** - '+j + '\n\n'
+	man += '''\n-------------------------------
+## Optional Parameters
+
 '''
 	for i,j in info['optional_parameters'].items():
-		man += '*'+i+'* - '+j + '\n'
+		man += '**'+i+'** - '+j + '\n\n'
 	man += '''-------------------------------
 For More information, see the grabbers specified url:
 {url}'''
