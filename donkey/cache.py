@@ -22,7 +22,7 @@ def get_cursor():
 	
 def clear_cache(since=0):
 	cursor.execute('DELETE FROM cache where time < %d' % (time()-(since*86400)))
-	cache.commit()
+	cursor.connection.commit()
 
 
 def comp(obj, un = False):
@@ -51,7 +51,7 @@ def cache_insert(s_key,val):
 		VALUES
 		(?, ?, ?, ?)
 	''', (uuid, t, c_key, sqlite3.Binary(c_val)))
-	cache.commit()
+	cursor.connection.commit()
 
 
 

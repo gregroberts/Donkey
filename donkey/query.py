@@ -11,7 +11,6 @@ from datetime import datetime
 
 class Query:
 	#this is the basic unit of work in Donkey
-
 	def __init__(self, grabber = None, freshness = None, handler= None):
 		self.grabber = grabber or config.default_grabber
 		if freshness == None:
@@ -23,6 +22,7 @@ class Query:
 		self.data = []
 		self.handle_query = {}
 		self.request_query = {}
+		self.crawl_query = {}
 
 	def fetch(self,update = True, **qry):
 		kwargs = copy(qry)
@@ -39,8 +39,7 @@ class Query:
 		self.data = handle(self.handler, self.raw_data, qry)
 		return self
 
-	def crawl(self, max_depth, next, rule = None):
-		self.crawler = True
+	def crawl(self,next, max_depth = 10):
 		all_data = []
 		qry = copy(self.request_query)
 		if type(self.data) is list:
@@ -48,18 +47,17 @@ class Query:
 		else:
 			all_data.append(self.data)
 		iters = 1
-		if rule == None:
-			check_rule = lambda : len(self.data)>0
-		else:
-			check_rule = lambda : search(rule, self.raw_data)
+		check_rule = lambda : len(self.data)>0
 		while iters < max_depth and check_rule():
-			qry.update(self.handle(**next).data)
-			_new = self.fetch(**qry).handle(**self.handle_query).data
+			qry.update(self.handle(update=False,**next).data)
+			self.fetch(update = False,**qry).handle(**self.handle_query)
+			_new = self.data
 			if type(_new) is list:
 				all_data.extend(_new)
 			else:
 				all_data.append(_new)
 			iters += 1
+		self.crawl_query = {'max_depth':max_depth, 'next':next}
 		return all_data
 
 	def run(self, **kwargs):
@@ -67,7 +65,10 @@ class Query:
 		for key, val in kwargs.items():
 			query = query.replace('{{%s}}' % key, val)
 		query = json.loads(query)
-		return self.fetch(False, **query).handle(False, **self.handle_query).data
+		data = self.fetch(False, **query).handle(False, **self.handle_query).data
+		if self.crawl_query != {}:
+			data = self.crawl(**self.crawl_query)
+		return data
 
 	def get_params(self):
 		q= json.dumps(self.request_query)
@@ -89,6 +90,7 @@ class Query:
 			'saved_at':datetime.now().strftime('%Y-%m-%d %H:%M'),
 			'request_query':self.request_query,
 			'handle_query':self.handle_query,
+			'crawl_query':self.crawl_query,
 			'grabber':self.grabber,
 			'freshness':self.freshness,
 			'handler':self.handler
@@ -110,48 +112,4 @@ class SavedQuery(Query):
 		self.handler = q['handler']
 		self.handle_query = q['handle_query']
 		self.request_query = q['request_query']
-
-
-
-
-if __name__ == '__main__':
-	q = Query(freshness=0)
-	q.fetch(url='http://example.com')
-	print q.handle(title='//title//text()').data
-	url = 'http://www.amazon.com'
-	print q.fetch(url=url
-				 ).handle(t='./@href', _base='//a[contains(@href,\'/dp/\')]').data
-	print q.set_params(domain='com')
-	q.save('testq','a test')
-	print q.run(domain='co.uk')
-	print q.run(domain='ca')
-	q2 = SavedQuery('testq')
-	print q2.get_params()
-	print q2.run(domain='in')
-	#q = Query('twitter', handler='JMESPATH')
-	#q.fetch(route='search/tweets.json', q='graphconnect+greg'
-	#).handle(_base = 'content.statuses[]', text = 'text')
-	#next = {'max_id':'content.statuses[-1].id'}
-	#x=q.crawl(10, next)
-	#pprint(x)
-	#q = Query('twitter', handler='JMESPATH', freshness=0)
-	#q.fetch(route='search/tweets.json', q='graphconnect+greg'
-	#).handle(_base = 'content.statuses[]', text = 'text')
-	#next = {'max_id':'content.search_metadata.max_id'}
-	#x=q.crawl(100, next, rule = 'content.search_metadata.next_results')
-	#for i in x:
-		#print i['text'].encode('ascii',errors='replace')
-	#test2 = {
-		#'request':{
-			#'url':'http://{{site}}.com'
-		#},
-		#'handle':{
-			#'title':'//title//text()'
-		#}
-	#}
-	#x = SavedQuery(**test2)
-	#print x.run(site='amazon')
-	#print x.get_params()
-	#print x.set_params(domain='com')
-#
-	#print x.run(site='amazon',domain='co.uk')
+		self.crawl_query = q['crawl_query']
