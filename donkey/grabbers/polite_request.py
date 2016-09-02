@@ -76,7 +76,7 @@ uas = [
 
 @retry(requests.exceptions.RequestException,
 		tries = 3, 
-		delay = randint(3,5),
+		delay = randint(3,15),
 		backoff = 1)
 def grabber(k):
 	'''k must have at least:
@@ -90,7 +90,7 @@ def grabber(k):
 	mime = kwargs.pop('mime','html')
 	url = kwargs.pop('url')
 	domain = kwargs.pop('domain',None)
-	sleep(randint(5,10))
+	sleep(randint(5,30))
 	#mostly to automatically fool any bugger who returns a 503 for requests with no user agent
 	if 'headers' in kwargs.keys():
 		kwargs['headers']['User-agent'] = choice(uas)
