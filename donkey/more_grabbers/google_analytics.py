@@ -1,6 +1,7 @@
-import apiclient
+from googleapiclient import discovery
+from oauth2client.service_account import ServiceAccountCredentials
 from . import config
-
+from oauth2client import crypt
 from httplib2 import Http
 
 def grabber(kwargs):
@@ -9,15 +10,16 @@ def grabber(kwargs):
 	#set up service
 	atts = config.google_analytics
 	viewid = atts['viewid']
-	signed = apiclient.oauth2client.client.SignedJwtAssertionCredentials
+	#signed = apiclient.oauth2client.service_account.SignedJwtAssertionCredentials
+	signed = ServiceAccountCredentials
 	try:
 		with open(atts['pkeyloc'], 'rb') as f:
-			private_key = f.read()
+			private_key = crypt.Signer.from_string(f.read())
 	except:
 		raise Exception('Grabber Error. coudld not find private key file. Check yer config')
 	credentials = signed(atts['email'],private_key, 'https://www.googleapis.com/auth/analytics')
 	http_auth =credentials.authorize(Http())
-	service = apiclient.discovery.build('analytics','v3',http = http_auth)
+	service = discovery.build('analytics','v3',http = http_auth)
 	res = service.data().ga()
 	#construct request
 	kwargs['ids'] = kwargs.get('ids',viewid)
